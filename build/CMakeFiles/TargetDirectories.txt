@@ -1,7 +1,0 @@
-/home/adrianparry17/Documents/App/C++/GraphicsEngine/build/CMakeFiles/01_Pipeline2D.dir
-/home/adrianparry17/Documents/App/C++/GraphicsEngine/build/CMakeFiles/02_Pipeline3D.dir
-/home/adrianparry17/Documents/App/C++/GraphicsEngine/build/CMakeFiles/03_CustomPipeline3D.dir
-/home/adrianparry17/Documents/App/C++/GraphicsEngine/build/CMakeFiles/04_DynamicTerrain.dir
-/home/adrianparry17/Documents/App/C++/GraphicsEngine/build/CMakeFiles/05_SolarSystem.dir
-/home/adrianparry17/Documents/App/C++/GraphicsEngine/build/CMakeFiles/edit_cache.dir
-/home/adrianparry17/Documents/App/C++/GraphicsEngine/build/CMakeFiles/rebuild_cache.dir
