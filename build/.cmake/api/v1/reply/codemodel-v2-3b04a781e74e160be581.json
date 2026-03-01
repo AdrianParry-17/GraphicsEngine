@@ -1,0 +1,97 @@
+{
+	"configurations" : 
+	[
+		{
+			"abstractTargets" : [],
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"jsonFile" : "directory-.-Debug-9ad1a58d4644cf6543fa.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "GraphicsEngine",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "01_Pipeline2D::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-01_Pipeline2D-Debug-f6f863f2c71aea467968.json",
+					"name" : "01_Pipeline2D",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "02_Pipeline3D::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-02_Pipeline3D-Debug-e9d3de0a5230c86285bc.json",
+					"name" : "02_Pipeline3D",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "03_CustomPipeline3D::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-03_CustomPipeline3D-Debug-4a540bf8781c84c0c62f.json",
+					"name" : "03_CustomPipeline3D",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "04_DynamicTerrain::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-04_DynamicTerrain-Debug-9149d340c800cd91510a.json",
+					"name" : "04_DynamicTerrain",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "05_SolarSystem::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-05_SolarSystem-Debug-9273c86e934bb209be8d.json",
+					"name" : "05_SolarSystem",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/adrianparry17/Documents/App/C++/GraphicsEngine/build",
+		"source" : "/home/adrianparry17/Documents/App/C++/GraphicsEngine"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 9
+	}
+}

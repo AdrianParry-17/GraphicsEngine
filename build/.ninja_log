@@ -1,0 +1,22 @@
+# ninja log v6
+2	2922	1772330972218997828	CMakeFiles/GraphicsEngine.dir/src/Main.cpp.o	ac62dd5fd1d7e1ce
+2	2022	1772330972219827730	CMakeFiles/01_Pipeline2D.dir/examples/01_Pipeline2D.cpp.o	87fa6de066631f86
+2	418	1772330972219970256	CMakeFiles/01_Pipeline2D.dir/src/Engine_Math.cpp.o	ea22f894dc653394
+2	153	1772332929274985883	02_Pipeline3D	4d11f8255999165f
+2022	2083	1772330974238997816	01_Pipeline2D	b760c3eb634e89f
+2	118	1772332929275971263	05_SolarSystem	2b5c83334c2b99bc
+2	339	1772288719877585210	CMakeFiles/ExamplePrimitives.dir/src/Engine_Math.cpp.o	c61b5ae9e21edf8e
+2	339	1772288719878368471	CMakeFiles/ExamplePipeline3D.dir/src/Engine_Math.cpp.o	89bd73b1c861d291
+2	331	1772288719878133268	CMakeFiles/ExamplePipeline2D.dir/src/Engine_Math.cpp.o	89860dd20922ce35
+6	383	1772330972223225654	CMakeFiles/05_SolarSystem.dir/src/Engine_Math.cpp.o	223739aacec762a8
+3	437	1772330972220940895	CMakeFiles/03_CustomPipeline3D.dir/src/Engine_Math.cpp.o	5af7db8b3ddd5724
+2	2091	1772284429047976772	CMakeFiles/GraphicsEngine.dir/src/Main2.cpp.o	ba493b7e08e22b8f
+2	413	1772330972219586482	CMakeFiles/GraphicsEngine.dir/src/Engine_Math.cpp.o	4608c4a31f20e2be
+2	153	1772332929275608959	03_CustomPipeline3D	6395712c1d81f52a
+4	404	1772330972221404268	CMakeFiles/04_DynamicTerrain.dir/src/Engine_Math.cpp.o	aa3c69034e09b210
+2	159	1772332929275740466	04_DynamicTerrain	52d278635b72b772
+2	1253	1772332898829986069	CMakeFiles/02_Pipeline3D.dir/examples/02_Pipeline3D.cpp.o	f4181a59587b88c2
+3	1836	1772332898831218273	CMakeFiles/05_SolarSystem.dir/examples/05_SolarSystem.cpp.o	6e034a496780109e
+2	1623	1772332898830986069	CMakeFiles/04_DynamicTerrain.dir/examples/04_DynamicTerrain.cpp.o	9ebe94b2634752e4
+3	393	1772330972220499327	CMakeFiles/02_Pipeline3D.dir/src/Engine_Math.cpp.o	33d8d22cd1f9fd81
+2	1738	1772332898830735321	CMakeFiles/03_CustomPipeline3D.dir/examples/03_CustomPipeline3D.cpp.o	ecfcc3ee1219d69b
