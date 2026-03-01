@@ -186,7 +186,7 @@ namespace Engine {
         /// @brief Sets output viewport.
         /// @param _viewport New viewport rectangle.
         void SetViewport(const Rectangle &_viewport) {
-            if (viewport.IsEmptyArea())
+            if (_viewport.IsEmptyArea())
                 throw std::invalid_argument("Graphics3DPipeline: The viewport area is 0!");
 
             viewport_g2d.SetOutputViewport(_viewport.LeftSide(), _viewport.RightSide(), _viewport.TopSide(), _viewport.BottomSide());

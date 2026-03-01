@@ -69,6 +69,7 @@ inline void Engine::RendererGraphics<ColorT>::RenderLine(int xa, int ya, int xb,
     auto draw_func = [this, &a_color, &b_color, &pixel_i, &n, &curr_c](int x, int y, const ColorT &color) -> bool {
         // Get color
         this->interpolator.Linear(a_color, b_color, (double)pixel_i / n, curr_c);
+        ++pixel_i;
 
         return this->RenderPoint(x, y, curr_c);
     };
@@ -94,6 +95,7 @@ inline void Engine::RendererGraphics<ColorT>::RenderLineExcludeStart(int xa, int
                         &curr_c](int x, int y, const ColorT &color) -> bool {
         // Get color
         this->interpolator.Linear(a_color, b_color, (double)pixel_i / n, curr_c);
+        ++pixel_i;
 
         return this->RenderPoint(x, y, curr_c);
     };
@@ -119,6 +121,7 @@ inline void Engine::RendererGraphics<ColorT>::RenderLineExcludeEnd(int xa, int y
                         &curr_c](int x, int y, const ColorT &color) -> bool {
         // Get color
         this->interpolator.Linear(a_color, b_color, (double)pixel_i / n, curr_c);
+        ++pixel_i;
 
         return this->RenderPoint(x, y, curr_c);
     };
