@@ -27,3 +27,17 @@ target_include_directories(04_DynamicTerrain PRIVATE include examples)
 
 add_executable(05_SolarSystem examples/05_SolarSystem.cpp src/Engine_Math.cpp)
 target_include_directories(05_SolarSystem PRIVATE include examples)
+
+enable_testing()
+
+add_executable(GraphicsEngineTests
+	tests/TestMain.cpp
+	tests/GraphicsTests.cpp
+	tests/MathMatrixTests.cpp
+	tests/WorldGraphicsTests.cpp
+	tests/PipelineTests.cpp
+	src/Engine_Math.cpp
+)
+target_include_directories(GraphicsEngineTests PRIVATE include tests)
+
+add_test(NAME GraphicsEngineTests COMMAND GraphicsEngineTests)
