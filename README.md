@@ -107,7 +107,7 @@ Test coverage spans:
 
 By prioritizing explicit architecture, modularity, and step-by-step readability over pure graphics throughput, the implementation makes a few deliberate trade-offs:
 1. **Virtual Dispatch Overhead:** To maintain highly composable wrappers and an object-oriented design, rendering pipelines utilize virtual method resolution continuously at the pixel/fragment level.
-2. **Perspective-Correct Interpolation:** Standard linear Barycentric interpolation thrives for arbitrary payloads like colors, but perspective mapping (UV textures) mathematically requires a scaler transformation step. A future extension of `IInterpolator<ColorT>` will be required to accommodate intermediate scaling calculations.
+2. **Perspective-Correct Interpolation:** To support mathematical perspective mapping (like UV textures), the `IInterpolator<ColorT>` interface now requires a `Scale(const T&, double, T&)` method. While necessary to accommodate intermediate scaling calculations, requiring a pure scaling operation inside an "interpolator" interface blurs the semantic boundary of what constitutes interpolation.
 3. **Template Dimension Duplication:** The `Engine_2D`, `Engine_3D`, and `Engine_4D` structures isolate dimension-specific behaviors to keep coordinate math readable, which results in slightly duplicated pipeline abstractions.
 
 ---
