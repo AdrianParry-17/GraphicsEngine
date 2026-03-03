@@ -34,18 +34,18 @@ public:
     }
 
     void Write() {
+        const char ascii_brightness[] = " .:-=+*#%@";
         std::cout << '+' << std::string(_w, '-') << "+\n";
         for (int y = 0; y < _h; ++y) {
             std::cout << '|';
             for (int x = 0; x < _w; ++x) {
                 int val = std::max(0, std::min(9, (int)std::round(_buffer[y][x])));
-                std::cout << (char)(((val == 0) ? ' ' : ('0' + val)));
+                std::cout << ascii_brightness[val];
             }
             std::cout << "|\n";
         }
         std::cout << '+' << std::string(_w, '-') << '+' << std::endl;
     }
-
     void Report() {
         std::cout << "Context Report:\n";
         std::cout << "+ Out of bound requested pixel: " << out_bound << '\n';

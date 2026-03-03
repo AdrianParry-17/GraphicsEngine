@@ -14,23 +14,27 @@ void RenderCube_pipe(Engine::Graphics3DPipeline<double> &pipeline) {
     // Helper function mapping 12 triangles forming a simple local cube at zero-point.
     
     std::vector<Engine::Vertex3D<double>> vertices = {
-        {-1, -1, -1, 3}, // 0: bottom-left-back
-        { 1, -1, -1, 4}, // 1: bottom-right-back
-        { 1,  1, -1, 5}, // 2: top-right-back
-        {-1,  1, -1, 6}, // 3: top-left-back
-        {-1, -1,  1, 4}, // 4: bottom-left-front
-        { 1, -1,  1, 5}, // 5: bottom-right-front
-        { 1,  1,  1, 9}, // 6: top-right-front
-        {-1,  1,  1, 8}  // 7: top-left-front
+        // Front face (Z = 1), Color: 9
+        {-1, -1,  1, 9}, { 1, -1,  1, 9}, { 1,  1,  1, 9}, {-1,  1,  1, 9},
+        // Back face (Z = -1), Color: 4
+        {-1, -1, -1, 4}, { 1, -1, -1, 4}, { 1,  1, -1, 4}, {-1,  1, -1, 4},
+        // Left face (X = -1), Color: 5
+        {-1, -1, -1, 5}, {-1, -1,  1, 5}, {-1,  1,  1, 5}, {-1,  1, -1, 5},
+        // Right face (X = 1), Color: 6
+        { 1, -1, -1, 6}, { 1, -1,  1, 6}, { 1,  1,  1, 6}, { 1,  1, -1, 6},
+        // Top face (Y = 1), Color: 7
+        {-1,  1, -1, 7}, { 1,  1, -1, 7}, { 1,  1,  1, 7}, {-1,  1,  1, 7},
+        // Bottom face (Y = -1), Color: 8
+        {-1, -1, -1, 8}, { 1, -1, -1, 8}, { 1, -1,  1, 8}, {-1, -1,  1, 8}
     };
 
     std::vector<int> indices = {
-        4, 5, 6, 4, 6, 7, // Front
-        1, 0, 3, 1, 3, 2, // Back
-        0, 4, 7, 0, 7, 3, // Left
-        5, 1, 2, 5, 2, 6, // Right
-        3, 7, 6, 3, 6, 2, // Top
-        0, 1, 5, 0, 5, 4  // Bottom
+        0,  1,  2,  0,  2,  3,  // Front
+        5,  4,  7,  5,  7,  6,  // Back
+        8,  9, 10,  8, 10, 11,  // Left
+        13, 12, 15, 13, 15, 14, // Right
+        16, 19, 18, 16, 18, 17, // Top
+        20, 21, 22, 20, 22, 23  // Bottom
     };
 
     pipeline.RenderGeometry(vertices, indices);
@@ -47,6 +51,8 @@ int main() {
 
     // Prepare global logic bindings
     const double _deg_to_rad = std::acos(-1) / 180.0;
+    
+    pipeline3d.EnablePerspectiveCorrection();
     
     // Define viewpoint base metrics
     pipeline3d.LoadIdentity();

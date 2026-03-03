@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Engine/Engine_Constant.h"
 #include "Engine_2D.h"
 #include "Engine_3D.h"
 #include "Engine_4D.h"
@@ -12,6 +13,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <vector>
+#include <limits>
 
 namespace Engine {
     /// @brief High-level 3D rendering pipeline with optional depth buffering.
@@ -23,6 +25,9 @@ namespace Engine {
         struct Fragment {
             /// @brief Interpolated fragment color/payload.
             ColorT color;
+            /// @brief Interpolated inverse w (1/w)
+            double inv_w; // For perspective correction
+
             /// @brief Interpolated depth value used for depth testing.
             double z_depth; // For z-depth test
         };
@@ -37,6 +42,7 @@ namespace Engine {
         // Variables
         FunctionInterpolator<Fragment> frag_interpolator; // For interpolate Fragment3D
         Rectangle viewport;
+        bool perspective_correct = true; // If true will enable perspective correction
 
         // Pipeline stuff
 
@@ -70,19 +76,36 @@ namespace Engine {
                 depth_buffer[idx] = frag.z_depth;
             }
 
-            // For now, just sent directly to graphics
-            return graphics.DrawPoint(x, y, frag.color);
+            // Perspective correct case
+            if (IsPerspectiveCorrectionEnabled()) {
+                Fragment tmp; // Required ColorT to have default constructor.
+                double inv_w_factor = frag.inv_w;
+                if (NumericConstants::IsNearZero(inv_w_factor))
+                    inv_w_factor = NumericConstants::NearZero;
+                inv_w_factor = 1.0 / inv_w_factor;
+
+                frag_interpolator.Scale(frag, inv_w_factor, tmp);
+
+                // Sent the corrected color
+                return graphics.DrawPoint(x, y, tmp.color);
+            }
+            else {
+                // Sent directly to graphics, no correction.
+                return graphics.DrawPoint(x, y, frag.color);
+            }
         }
 
         // -- Projecting/Embedding --
 
-        void project3dTo2d(const Vertex3D<Fragment> &in, Vertex2D<Fragment> &out) const {
+        void project3dTo2d(const Vertex3D<Fragment> &in, Vertex2D<Fragment> &out) {
             // Just ignore z
             out.x = in.x;
             out.y = in.y;
-            out.color = Fragment{in.color.color, in.z};
+
+            out.color = in.color;
+            out.color.z_depth = in.z;
         }
-        void project4dTo3d(const Vertex4D<Fragment> &in, Vertex3D<Fragment> &out) const {
+        void project4dTo3d(const Vertex4D<Fragment> &in, Vertex3D<Fragment> &out) {
             // Homogenerous divide
 
             double w_factor = in.w;
@@ -93,35 +116,60 @@ namespace Engine {
             out.x = in.x * w_factor;
             out.y = in.y * w_factor;
             out.z = in.z * w_factor;
-            out.color = in.color;
+
+            // On perspective correction, scale the color by 1/w (before interpolating)
+            if (IsPerspectiveCorrectionEnabled()) {
+                frag_interpolator.Scale(in.color, w_factor, out.color);
+                out.color.inv_w = w_factor;
+            }
+            else {
+                out.color = in.color; // No correction => no need for scaling
+                out.color.inv_w = 1; // For later, if somehow correction enable after this, it'll still get the non-corrected result.
+                
+                // Notice that this trick still broken, when somehow perspective correct was changing while
+                // this part happen (e.g. the color_interpolator.Scale change perspective correct status).
+            }
         }
         void embed3dTo4d(const Vertex3D<Fragment> &in, Vertex4D<Fragment> &out) const {
             out.x = in.x;
             out.y = in.y;
             out.z = in.z;
             out.w = 1; // Homogenerous embed
+
             out.color = in.color;
         }
         void inputConvert3d(const Vertex3D<ColorT> &in, Vertex3D<Fragment> &out) const {
             out.x = in.x;
             out.y = in.y;
             out.z = in.z;
-            out.color = Fragment{in.color, in.z};
+
+            // Set inv_w = 1, z_depth = 0 as default
+            out.color = Fragment{in.color, 1, 0};
         }
 
         // -- Interpolation --
 
+        void frag_scale_interpolate(const Fragment& in, double scalar, Fragment& result) {
+            // Color
+            color_interpolator.Scale(in.color, scalar, result.color);
+            
+            // Non-scale attribute
+            result.z_depth = in.z_depth; // This use for depth test, not an actual attribute
+            result.inv_w = in.inv_w; // Inverse W (1/w), this use for later scaling
+        }
         void frag_linear_interpolate(const Fragment &a, const Fragment &b, double t, Fragment &result) {
             // Color
             color_interpolator.Linear(a.color, b.color, t, result.color);
             // Attributes
             result.z_depth = a.z_depth + (b.z_depth - a.z_depth) * t; // Z-depth
+            result.inv_w = a.inv_w + (b.inv_w - a.inv_w) * t; // Inverse W (1/w)
         }
         void frag_triangle_interpolate(const Fragment &a, const Fragment &b, const Fragment &c, double wa, double wb, double wc, Fragment &result) {
             // Color
             color_interpolator.Triangle(a.color, b.color, c.color, wa, wb, wc, result.color);
             // Attributes;
             result.z_depth = a.z_depth * wa + b.z_depth * wb + c.z_depth * wc; // Z-depth
+            result.inv_w = a.inv_w * wa + b.inv_w * wb + c.inv_w * wc; // Inverse W (1/w)
         }
 
     public:
@@ -131,6 +179,17 @@ namespace Engine {
         /// @param _viewport Output viewport rectangle.
         Graphics3DPipeline(IGraphics<ColorT> &_graphics, IInterpolator<ColorT> &_color_interpolator, const Rectangle &_viewport)
             : graphics(_graphics), color_interpolator(_color_interpolator),
+            frag_interpolator(
+                [this](const Fragment& in, double scalar, Fragment& result) {
+                    return this->frag_scale_interpolate(in, scalar, result);
+                },
+                [this](const Fragment &a, const Fragment &b, double t, Fragment &result) {
+                    return this->frag_linear_interpolate(a, b, t, result);
+                },
+                [this](const Fragment &a, const Fragment &b, const Fragment &c, double wa, double wb, double wc, Fragment &result) {
+                    return this->frag_triangle_interpolate(a, b, c, wa, wb, wc, result);
+                }
+            ),
             function_g([this](int x, int y, const Fragment &c) -> bool { return this->drawFragment(x, y, c); }),
             clipped_g(function_g, _viewport), // Disable on default
             renderer_g(function_g, frag_interpolator), renderer_g2d(renderer_g),
@@ -155,14 +214,6 @@ namespace Engine {
             input_g3d(
                 embed_g3d,
                 [this](const Vertex3D<ColorT> &in, Vertex3D<Fragment> &out) { this->inputConvert3d(in, out); }
-            ),
-            frag_interpolator(
-                [this](const Fragment &a, const Fragment &b, double t, Fragment &result) {
-                    return this->frag_linear_interpolate(a, b, t, result);
-                },
-                [this](const Fragment &a, const Fragment &b, const Fragment &c, double wa, double wb, double wc, Fragment &result) {
-                    return this->frag_triangle_interpolate(a, b, c, wa, wb, wc, result);
-                }
             ),
             viewport(_viewport) 
         {
@@ -195,7 +246,7 @@ namespace Engine {
 
             // Depth buffer
             if (!depth_buffer.empty()) // Depth buffer is enabled
-                depth_buffer.assign(viewport.Area(), INFINITY);
+                depth_buffer.assign(viewport.Area(), std::numeric_limits<double>::infinity());
         }
         /// @brief Gets current output viewport.
         Rectangle GetViewport() const { return viewport; }
@@ -203,13 +254,20 @@ namespace Engine {
         /// @brief Enables depth buffer allocation and usage.
         void EnableDepthBuffer() {
             if (depth_buffer.empty())
-                depth_buffer.assign(viewport.Area(), INFINITY);
+                depth_buffer.assign(viewport.Area(), std::numeric_limits<double>::infinity());
         }
         /// @brief Disables depth buffering.
         void DisableDepthBuffer() { depth_buffer.clear(); }
 
         /// @brief Checks whether depth buffering is enabled.
         bool IsDepthBufferEnabled() const { return !depth_buffer.empty(); }
+
+        // Note, the below 2 function shouldn't be called while "rasterizing" since it could caused problem.
+        // They only safe when called between RenderTriangle/RenderGeometry call.
+        void EnablePerspectiveCorrection() { perspective_correct = true; }
+        void DisablePerspectiveCorrection() { perspective_correct = false; }
+        
+        bool IsPerspectiveCorrectionEnabled() const { return perspective_correct; }
 
         /// @brief Clears depth buffer to infinity when enabled.
         void ClearDepthBuffer() {
@@ -226,15 +284,15 @@ namespace Engine {
         /// @brief Pops matrix stack.
         void PopMatrix() { matrix_g4d.PopMatrix(); }
 
-		/// @brief Gets current matrix data as raw array.
-		void GetMatrixData(std::array<double, 16>& res) const { matrix_g4d.GetMatrixData(res); }
-		/// @brief Gets current matrix data.
-		void GetMatrixData(Matrix4x4& res) const { matrix_g4d.GetMatrixData(res); }
-		
-		/// @brief Replaces current matrix data.
-		void SetMatrixData(const std::array<double, 16>& data) { matrix_g4d.SetMatrixData(data); }
-		/// @brief Replaces current matrix data.
-		void SetMatrixData(const Matrix4x4& data) { matrix_g4d.SetMatrixData(data); }
+        /// @brief Gets current matrix data as raw array.
+        void GetMatrixData(std::array<double, 16>& res) const { matrix_g4d.GetMatrixData(res); }
+        /// @brief Gets current matrix data.
+        void GetMatrixData(Matrix4x4& res) const { matrix_g4d.GetMatrixData(res); }
+            
+        /// @brief Replaces current matrix data.
+        void SetMatrixData(const std::array<double, 16>& data) { matrix_g4d.SetMatrixData(data); }
+        /// @brief Replaces current matrix data.
+        void SetMatrixData(const Matrix4x4& data) { matrix_g4d.SetMatrixData(data); }
 
         /// @brief Right-multiplies current matrix.
         void MultiplyMatrix(const Matrix4x4& mat) { matrix_g4d.MultiplyMatrix(mat); }

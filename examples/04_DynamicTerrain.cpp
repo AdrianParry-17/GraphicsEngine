@@ -77,6 +77,7 @@ int main() {
 
     const double _deg_to_rad = std::acos(-1) / 180.0;
     
+    pipeline3d.EnablePerspectiveCorrection();
     pipeline3d.LoadIdentity();
     pipeline3d.Perspective(55 * _deg_to_rad, 120.0 / 30.0, 0.01, 100);
     pipeline3d.EnableDepthBuffer();

@@ -76,6 +76,10 @@ namespace Engine {
         }
 
         // -- Interpolation --
+    
+        void frag_scale_interpolate(const Fragment& in, double scalar, Fragment& result) {
+            color_interpolator.Scale(in.color, scalar, result.color);
+        }
 
         void frag_linear_interpolate(const Fragment &a, const Fragment &b, double t, Fragment &result) {
             color_interpolator.Linear(a.color, b.color, t, result.color);
@@ -114,6 +118,9 @@ namespace Engine {
                 [this](const Vertex2D<ColorT> &in, Vertex2D<Fragment> &out) { this->inputConvert2d(in, out); }
             ),
             frag_interpolator(
+                [this](const Fragment &in, double scalar, Fragment &result) {
+                    return this->frag_scale_interpolate(in, scalar, result);
+                },
                 [this](const Fragment &a, const Fragment &b, double t, Fragment &result) {
                     return this->frag_linear_interpolate(a, b, t, result);
                 },

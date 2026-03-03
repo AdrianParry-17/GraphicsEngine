@@ -46,6 +46,7 @@ int main() {
 
     Engine::Graphics3DPipeline<double> pipeline(
         context_g, color_interpolator, Engine::Rectangle(0, 0, 120, 30));
+    
 
     const double _deg_to_rad = std::acos(-1) / 180.0;
     
