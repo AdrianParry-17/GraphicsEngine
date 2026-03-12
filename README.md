@@ -33,15 +33,15 @@ The rendering engine mathematically processes generic data—whether it represen
 
 ### 2. Custom Mathematical Foundation
 To remain entirely self-contained, all linear algebra and coordinate systems are implemented from the ground up:
-- Dedicated `Vector2`, `Vector3`, `Vector4`, and `Matrix3x3`, `Matrix4x4` structures.
+- Generic N-dimensional `Vector<D>` and `SquareMatrix<D>` types; `Vector2/3/4` and `Matrix2x2/3x3/4x4` are convenience aliases.
 - `Quaternion` mathematics for handling gimbal-lock-free 3D spatial rotations.
-- Viewport and projection matrix construction (Orthographic, Perspective, Frustum).
+- Viewport and projection matrix construction (Orthographic, Perspective, Frustum) via `Transform2D` / `Transform3D` utility classes.
 
 ### 3. Layered Composable Pipeline
 The pipeline features strict boundaries, allowing developers to test, modify, or swap out individual stages without breaking the rendering loop:
 - **Pixel Layer:** Abstract `IDrawingContext<ColorT>` interfaces bridged by protective wrappers (`ClippedGraphics`, `ViewportGraphics`).
 - **Rasterization & Interpolation:** `RendererGraphics` constructs complex primitive meshes out of simple indexed vertex maps.
-- **Dimensional Interfaces:** Separated geometric boundaries tailored explicitly to `IGraphics2D`, `IGraphics3D`, and `IGraphics4D` coordinate spaces.
+- **World Graphics Layer:** A unified, N-dimensional `IWorldGraphics<ColorT, D>` abstraction covers vertex transformation, clipping, and viewport mapping generically. `Engine_2D/3D/4D.h` provide convenient dimension-specific aliases (`IWorldGraphics3D`, `WorldVertex3D`, etc.).
 - **High-Level Pipelines:** `Graphics2DPipeline` and `Graphics3DPipeline` coordinate matrix transform stacks (`PushMatrix`, `PopMatrix`), z-depth clipping, and full scene updates.
 
 ---
@@ -107,8 +107,8 @@ Test coverage spans:
 
 By prioritizing explicit architecture, modularity, and step-by-step readability over pure graphics throughput, the implementation makes a few deliberate trade-offs:
 1. **Virtual Dispatch Overhead:** To maintain highly composable wrappers and an object-oriented design, rendering pipelines utilize virtual method resolution continuously at the pixel/fragment level.
-2. **Perspective-Correct Interpolation:** To support mathematical perspective mapping (like UV textures), the `IInterpolator<ColorT>` interface now requires a `Scale(const T&, double, T&)` method. While necessary to accommodate intermediate scaling calculations, requiring a pure scaling operation inside an "interpolator" interface blurs the semantic boundary of what constitutes interpolation.
-3. **Template Dimension Duplication:** The `Engine_2D`, `Engine_3D`, and `Engine_4D` structures isolate dimension-specific behaviors to keep coordinate math readable, which results in slightly duplicated pipeline abstractions.
+2. **Perspective-Correct Interpolation:** Perspective-correct rasterization requires a scalar scaling step on the color payload. This is now cleanly separated from general interpolation via a dedicated `IScalableInterpolator<ColorT>` interface. Callers who need perspective correction must provide this extended type; those who do not can continue using the simpler `IInterpolator<ColorT>`.
+3. **Generic API Verbosity:** The move from hardcoded per-dimension types to a generic `Vector<D>`-based system resolves dimension duplication entirely, but introduces slightly more verbose position access. Where the old API allowed `vertex.x`, `vertex.y`, `vertex.z`, the new API requires `vertex.position.x()`, `vertex.position.y()`, `vertex.position.z()`. Dimension-specific constructors and accessor helpers are provided to mitigate this.
 
 ---
 
@@ -116,5 +116,7 @@ By prioritizing explicit architecture, modularity, and step-by-step readability 
 
 Key points of interest within the codebase:
 - [`include/Engine/Engine_Graphics3DPipeline.h`](include/Engine/Engine_Graphics3DPipeline.h) - *The highest-level abstract representation of the 3D projection rendering loop.*
-- [`include/Engine/Engine_Matrix.h`](include/Engine/Engine_Matrix.h) & [`src/Engine_Math.cpp`](src/Engine_Math.cpp) - *Core projection and mathematical transformation models.*
-- [`include/Engine/Engine_Interpolation.h`](include/Engine/Engine_Interpolation.h) - *The template definitions decoupling geometry rasterization from rendering payloads.*
+- [`include/Engine/Engine_WorldGraphics.h`](include/Engine/Engine_WorldGraphics.h) - *The generic N-dimensional world graphics system; the core of the dimension-agnostic pipeline architecture.*
+- [`include/Engine/Engine_Matrix.h`](include/Engine/Engine_Matrix.h) & [`src/Engine_Math.cpp`](src/Engine_Math.cpp) - *Core N-dimensional matrix math and projection model.*
+- [`include/Engine/Engine_Transform.h`](include/Engine/Engine_Transform.h) - *Static transformation helpers (translation, rotation, scale, projection) for 2D and 3D spaces.*
+- [`include/Engine/Engine_Interpolation.h`](include/Engine/Engine_Interpolation.h) - *The `IInterpolator` and `IScalableInterpolator` interfaces decoupling rasterization from rendering payloads.*

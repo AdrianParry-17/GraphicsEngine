@@ -41,13 +41,13 @@ namespace Tests {
         }
     };
 
-    struct CountingGraphics2D : public Engine::IGraphics2D<double> {
+    struct CountingGraphics2D : public Engine::IWorldGraphics2D<double> {
         int triangles = 0;
-        Engine::Vertex2D<double> lastA;
-        Engine::Vertex2D<double> lastB;
-        Engine::Vertex2D<double> lastC;
+        Engine::WorldVertex2D<double> lastA;
+        Engine::WorldVertex2D<double> lastB;
+        Engine::WorldVertex2D<double> lastC;
 
-        void RenderTriangle(const Engine::Vertex2D<double>& a, const Engine::Vertex2D<double>& b, const Engine::Vertex2D<double>& c) override {
+        void RenderTriangle(const Engine::WorldVertex2D<double>& a, const Engine::WorldVertex2D<double>& b, const Engine::WorldVertex2D<double>& c) override {
             ++triangles;
             lastA = a;
             lastB = b;
@@ -55,13 +55,13 @@ namespace Tests {
         }
     };
 
-    struct CountingGraphics3D : public Engine::IGraphics3D<double> {
+    struct CountingGraphics3D : public Engine::IWorldGraphics3D<double> {
         int triangles = 0;
-        Engine::Vertex3D<double> lastA;
-        Engine::Vertex3D<double> lastB;
-        Engine::Vertex3D<double> lastC;
+        Engine::WorldVertex3D<double> lastA;
+        Engine::WorldVertex3D<double> lastB;
+        Engine::WorldVertex3D<double> lastC;
 
-        void RenderTriangle(const Engine::Vertex3D<double>& a, const Engine::Vertex3D<double>& b, const Engine::Vertex3D<double>& c) override {
+        void RenderTriangle(const Engine::WorldVertex3D<double>& a, const Engine::WorldVertex3D<double>& b, const Engine::WorldVertex3D<double>& c) override {
             ++triangles;
             lastA = a;
             lastB = b;
@@ -69,13 +69,13 @@ namespace Tests {
         }
     };
 
-    struct CountingGraphics4D : public Engine::IGraphics4D<double> {
+    struct CountingGraphics4D : public Engine::IWorldGraphics4D<double> {
         int triangles = 0;
-        Engine::Vertex4D<double> lastA;
-        Engine::Vertex4D<double> lastB;
-        Engine::Vertex4D<double> lastC;
+        Engine::WorldVertex4D<double> lastA;
+        Engine::WorldVertex4D<double> lastB;
+        Engine::WorldVertex4D<double> lastC;
 
-        void RenderTriangle(const Engine::Vertex4D<double>& a, const Engine::Vertex4D<double>& b, const Engine::Vertex4D<double>& c) override {
+        void RenderTriangle(const Engine::WorldVertex4D<double>& a, const Engine::WorldVertex4D<double>& b, const Engine::WorldVertex4D<double>& c) override {
             ++triangles;
             lastA = a;
             lastB = b;

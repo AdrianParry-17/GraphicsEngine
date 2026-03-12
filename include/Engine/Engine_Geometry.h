@@ -8,10 +8,18 @@ namespace Engine {
     class Point {
     public:
         /// @brief X coordinate.
-        int x = 0, y = 0;
+        int x = 0;
+        /// @brief Y coordinate.
+        int y = 0;
 
+        /// @brief Default constructor.
         Point() = default;
+        /// @brief Constructor that sets both x and y to the same value.
+        /// @param _xy Value for both x and y.
         Point(int _xy) : x(_xy), y(_xy) {}
+        /// @brief Constructor from separate x and y values.
+        /// @param _x The x coordinate.
+        /// @param _y The y coordinate.
         Point(int _x, int _y) : x(_x), y(_y) {}
 
         Point operator-() const { return Point(-x, -y); }
@@ -59,12 +67,22 @@ namespace Engine {
     /// @brief Integer 2D size.
     class Size {
     public:
-        /// @brief Width and height.
-        int w = 0, h = 0;
+        /// @brief Width.
+        int w = 0;
+        /// @brief Height.
+        int h = 0;
 
+        /// @brief Default constructor.
         Size() = default;
+        /// @brief Constructor that sets both w and h to the same value.
+        /// @param _wh Value for both width and height.
         Size(int _wh) : w(_wh), h(_wh) {}
+        /// @brief Constructor from separate width and height values.
+        /// @param _w Width.
+        /// @param _h Height.
         Size(int _w, int _h) : w(_w), h(_h) {}
+        /// @brief Constructor from a Point, treating x as width and y as height.
+        /// @param _p The source point.
         Size(const Point& _p) : w(_p.x), h(_p.y) {}
 
         operator Point() const { return Point(w, h); }
@@ -105,17 +123,51 @@ namespace Engine {
     /// @brief Integer rectangle with support for negative extents.
     class Rectangle {
     public:
-        /// @brief Origin and size components.
-        int x = 0, y = 0, w = 0, h = 0;
+        /// @brief X origin.
+        int x = 0;
+        /// @brief Y origin.
+        int y = 0;
+        /// @brief Width (may be negative).
+        int w = 0;
+        /// @brief Height (may be negative).
+        int h = 0;
 
+        /// @brief Default constructor.
         Rectangle() = default;
+        /// @brief Constructor that sets all components to the same value.
+        /// @param _xywh Value for x, y, w and h.
         Rectangle(int _xywh) : x(_xywh), y(_xywh), w(_xywh), h(_xywh) {}
+        /// @brief Constructor from origin scalar and size scalar.
+        /// @param _xy Value for both x and y.
+        /// @param _wh Value for both w and h.
         Rectangle(int _xy, int _wh) : x(_xy), y(_xy), w(_wh), h(_wh) {}
+        /// @brief Constructor from individual components.
+        /// @param _x X origin.
+        /// @param _y Y origin.
+        /// @param _w Width.
+        /// @param _h Height.
         Rectangle(int _x, int _y, int _w, int _h) : x(_x), y(_y), w(_w), h(_h) {}
+        /// @brief Constructor from a Point origin and uniform size.
+        /// @param _p Origin.
+        /// @param _wh Value for both w and h.
         Rectangle(const Point& _p, int _wh) : x(_p.x), y(_p.y), w(_wh), h(_wh) {}
+        /// @brief Constructor from a Point origin and separate w/h.
+        /// @param _p Origin.
+        /// @param _w Width.
+        /// @param _h Height.
         Rectangle(const Point& _p, int _w, int _h) : x(_p.x), y(_p.y), w(_w), h(_h) {}
+        /// @brief Constructor from a scalar origin and a Size.
+        /// @param _xy Value for both x and y.
+        /// @param _s The size.
         Rectangle(int _xy, const Size& _s) : x(_xy), y(_xy), w(_s.w), h(_s.h) {}
+        /// @brief Constructor from separate x/y origin and a Size.
+        /// @param _x X origin.
+        /// @param _y Y origin.
+        /// @param _s The size.
         Rectangle(int _x, int _y, const Size& _s) : x(_x), y(_y), w(_s.w), h(_s.h) {}
+        /// @brief Constructor from a Point origin and a Size.
+        /// @param _p Origin.
+        /// @param _s The size.
         Rectangle(const Point& _p, const Size& _s) : x(_p.x), y(_p.y), w(_s.w), h(_s.h) {}
 
         Rectangle operator-() const { return Rectangle(-x, -y, -w, -h); }
@@ -163,11 +215,16 @@ namespace Engine {
         /// @brief Bottom inclusive boundary.
         int BottomSide() const { return h > 0 ? y + h - 1 : y; }
 
+        /// @brief Top-left corner of the rectangle.
         Point TopLeft() const { return Point(LeftSide(), TopSide()); }
+        /// @brief Top-right corner of the rectangle.
         Point TopRight() const { return Point(RightSide(), TopSide()); }
+        /// @brief Bottom-left corner of the rectangle.
         Point BottomLeft() const { return Point(LeftSide(), BottomSide()); }
+        /// @brief Bottom-right corner of the rectangle.
         Point BottomRight() const { return Point(RightSide(), BottomSide()); }
 
+        /// @brief Returns an equivalent rectangle with positive extents, anchored at the top-left.
         Rectangle TopLeftRectangle() const { return Rectangle(LeftSide(), TopSide(), std::abs(w), std::abs(h)); }
 
         /// @brief Returns true if point is inside rectangle.

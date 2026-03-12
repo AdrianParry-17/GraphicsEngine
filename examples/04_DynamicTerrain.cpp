@@ -16,7 +16,7 @@ void RenderTerrain(Engine::Graphics3DPipeline<double>& pipeline, double time_off
     const int GRID_SIZE = 14; 
     const double SPACING = 0.6; // Space between each vertex
     
-    std::vector<Engine::Vertex3D<double>> vertices;
+    std::vector<Engine::WorldVertex3D<double>> vertices;
     vertices.reserve(GRID_SIZE * GRID_SIZE);
     
     std::vector<int> indices;
@@ -40,7 +40,7 @@ void RenderTerrain(Engine::Graphics3DPipeline<double>& pipeline, double time_off
             double vx = (x - GRID_SIZE / 2.0) * SPACING;
             double vz = (z - GRID_SIZE / 2.0) * SPACING;
             double vy = getHeight(vx, vz);
-            vertices.push_back(Engine::Vertex3D<double>(vx, vy, vz, getColor(vy)));
+            vertices.push_back(Engine::WorldVertex3D<double>({vx, vy, vz}, getColor(vy)));
         }
     }
     
@@ -69,7 +69,7 @@ void RenderTerrain(Engine::Graphics3DPipeline<double>& pipeline, double time_off
 
 int main() {
     TerminalBufferContext context(120, 30);
-    Engine::Interpolator<double> color_interpolator;
+    Engine::ScalableInterpolator<double> color_interpolator;
     Engine::ContextGraphics<double> context_g(context);
 
     Engine::Graphics3DPipeline<double> pipeline3d(
@@ -91,14 +91,14 @@ int main() {
         pipeline3d.PushMatrix();
         
         // Tilt the camera down 30 degrees and move it back/up slightly to see the terrain
-        pipeline3d.Transform3D(
+        pipeline3d.Transform(
             Engine::Vector3(0, -2.5, -8),
             Engine::Vector3(30 * _deg_to_rad, 0, 0),
             Engine::Vector3(1, 1, 1)
         );
         
         // Slowly rotate the entire terrain while moving the wave phase
-        pipeline3d.Rotate3D(Engine::Vector3(0, time * 0.2, 0));
+        pipeline3d.Rotate(Engine::Vector3(0, time * 0.2, 0));
 
         RenderTerrain(pipeline3d, time);
         

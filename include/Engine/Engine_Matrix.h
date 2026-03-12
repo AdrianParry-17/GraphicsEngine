@@ -1,776 +1,267 @@
 #pragma once
 
-#include "Engine_Quaternion.h"
 #include "Engine_Vector.h"
 #include "Engine_Constant.h"
 
-#include <cmath>
-#include <math.h>
 #include <array>
-#include <functional>
+#include <numeric>
+#include <algorithm>
 
 namespace Engine {
-	/// @brief 4x4 matrix with row-major storage.
-	struct Matrix4x4 {
+    /**
+     * @brief A generic N-dimensional square matrix class.
+     * @tparam D The dimensionality of the matrix (number of rows and columns).
+     */
+    template <size_t D>
+    struct SquareMatrix {
+    public:
+        /**
+         * @brief The dimensionality of the matrix.
+         */
+        static const size_t Dimension = D;
+        /**
+         * @brief The total number of cells/elements in the matrix.
+         */
+        static const size_t CellCount = D * D;
 	private:
-		std::array<double, 16> data;
+		std::array<double, CellCount> data;
 	public:
-		Matrix4x4() { data.fill(0); }
-		Matrix4x4(double _fill) { data.fill(_fill); }
-		Matrix4x4(const std::array<double, 16>& _data) : data(_data) {}
+		/**
+		 * @brief Default constructor, initializes all elements to zero.
+		 */
+		SquareMatrix() { data.fill(0); }
+		/**
+		 * @brief Constructor that fills all elements with the given value.
+		 * @param _fill The value to fill all elements with.
+		 */
+		SquareMatrix(double _fill) { data.fill(_fill); }
+		/**
+		 * @brief Constructor from a standard array.
+		 * @param _data The array containing the matrix data in row-major order.
+		 */
+		SquareMatrix(const std::array<double, CellCount>& _data) : data(_data) {}
 
-		Matrix4x4 operator-() const {
-			std::array<double, 16> _tmp;
-			for (int i = 0; i < 16; ++i) _tmp[i] = -data[i];
-			return Matrix4x4(_tmp);
+		SquareMatrix<D> operator-() const {
+			std::array<double, CellCount> _tmp;
+			for (int i = 0; i < CellCount; ++i) _tmp[i] = -data[i];
+			return SquareMatrix<D>(_tmp);
 		}
-		double& operator()(int r, int c) { return data[r * 4 + c]; }
-		const double& operator()(int r, int c) const { return data[r * 4 + c]; }
+		double& operator()(int r, int c) { return data[r * D + c]; }
+		const double& operator()(int r, int c) const { return data[r * D + c]; }
 		
-		Matrix4x4& operator=(const Matrix4x4& _m) { data = _m.data; return *this; }
-		Matrix4x4& operator=(const std::array<double, 16>& _m) { data = _m; return *this; }
-		Matrix4x4& operator=(double _fill) { data.fill(_fill); return *this; }
-		Matrix4x4& operator+=(const std::array<double, 16>& _m) { Matrix4x4::Add(data, _m, data); return *this; }
-		Matrix4x4& operator+=(const Matrix4x4& _m) { Matrix4x4::Add(data, _m.data, data); return *this; }
-		Matrix4x4& operator+=(double _v) {
+		SquareMatrix<D>& operator=(const SquareMatrix<D>& _m) { data = _m.data; return *this; }
+		SquareMatrix<D>& operator=(const std::array<double, CellCount>& _m) { data = _m; return *this; }
+		SquareMatrix<D>& operator=(double _fill) { data.fill(_fill); return *this; }
+		SquareMatrix<D>& operator+=(const std::array<double, CellCount>& _m) { SquareMatrix<D>::Add(data, _m, data); return *this; }
+		SquareMatrix<D>& operator+=(const SquareMatrix<D>& _m) { SquareMatrix<D>::Add(data, _m.data, data); return *this; }
+		SquareMatrix<D>& operator+=(double _v) {
 			for (double& v : data) v += _v;
 			return *this;
 		}
-		Matrix4x4& operator-=(const std::array<double, 16>& _m) { Matrix4x4::Subtract(data, _m, data); return *this; }
-		Matrix4x4& operator-=(const Matrix4x4& _m) { Matrix4x4::Subtract(data, _m.data, data); return *this; }
-		Matrix4x4& operator-=(double _v) {
+		SquareMatrix<D>& operator-=(const std::array<double, CellCount>& _m) { SquareMatrix<D>::Subtract(data, _m, data); return *this; }
+		SquareMatrix<D>& operator-=(const SquareMatrix<D>& _m) { SquareMatrix<D>::Subtract(data, _m.data, data); return *this; }
+		SquareMatrix<D>& operator-=(double _v) {
 			for (double& v : data) v -= _v;
 			return *this;
 		}
 
-		Matrix4x4& operator*=(double _s) {
+		SquareMatrix<D>& operator*=(double _s) {
 			for (double& v : data) v *= _s;
 			return *this;
 		}
-		Matrix4x4& operator*=(const std::array<double, 16>& _m) {
-			std::array<double, 16> _tmp;
-			Matrix4x4::Multiply(data, _m, _tmp);
+		SquareMatrix<D>& operator*=(const std::array<double, CellCount>& _m) {
+			std::array<double, CellCount> _tmp;
+			SquareMatrix<D>::Multiply(data, _m, _tmp);
 			data.swap(_tmp);
 			return *this;
 		}
-		Matrix4x4& operator*=(const Matrix4x4& _m) {
-			std::array<double, 16> _tmp;
-			Matrix4x4::Multiply(data, _m.data, _tmp);
+		SquareMatrix<D>& operator*=(const SquareMatrix<D>& _m) {
+			std::array<double, CellCount> _tmp;
+			SquareMatrix<D>::Multiply(data, _m.data, _tmp);
 			data.swap(_tmp);
 			return *this;
 		}
 
-		Matrix4x4 operator+(const Matrix4x4& _m) const {
-			std::array<double, 16> _tmp;
-			Matrix4x4::Add(data, _m.data, _tmp);
-			return Matrix4x4(_tmp);
+		SquareMatrix<D> operator+(const SquareMatrix<D>& _m) const {
+			std::array<double, CellCount> _tmp;
+			SquareMatrix<D>::Add(data, _m.data, _tmp);
+			return SquareMatrix<D>(_tmp);
 		}
-		Matrix4x4 operator+(const std::array<double, 16>& _m) const {
-			std::array<double, 16> _tmp;
-			Matrix4x4::Add(data, _m, _tmp);
-			return Matrix4x4(_tmp);
+		SquareMatrix<D> operator+(const std::array<double, CellCount>& _m) const {
+			std::array<double, CellCount> _tmp;
+			SquareMatrix<D>::Add(data, _m, _tmp);
+			return SquareMatrix<D>(_tmp);
 		}
-		Matrix4x4 operator+(double _v) const {
-			std::array<double, 16> _tmp;
-			for (int i = 0; i < 16; ++i) _tmp[i] = data[i] + _v;
-			return Matrix4x4(_tmp);
+		SquareMatrix<D> operator+(double _v) const {
+			std::array<double, CellCount> _tmp;
+			for (int i = 0; i < CellCount; ++i) _tmp[i] = data[i] + _v;
+			return SquareMatrix<D>(_tmp);
 		}
-		friend Matrix4x4 operator+(const std::array<double, 16>& l, const Matrix4x4& r) {
-			std::array<double, 16> _tmp;
-			Matrix4x4::Add(l, r.data, _tmp);
-			return Matrix4x4(_tmp);
+		friend SquareMatrix<D> operator+(const std::array<double, CellCount>& l, const SquareMatrix<D>& r) {
+			std::array<double, CellCount> _tmp;
+			SquareMatrix<D>::Add(l, r.data, _tmp);
+			return SquareMatrix<D>(_tmp);
 		}
-		friend Matrix4x4 operator+(double _v, const Matrix4x4& r) {
-			std::array<double, 16> _tmp;
-			for (int i = 0; i < 16; ++i) _tmp[i] = _v + r.data[i];
-			return Matrix4x4(_tmp);
-		}
-
-		Matrix4x4 operator-(const Matrix4x4& _m) const {
-			std::array<double, 16> _tmp;
-			Matrix4x4::Subtract(data, _m.data, _tmp);
-			return Matrix4x4(_tmp);
-		}
-		Matrix4x4 operator-(const std::array<double, 16>& _m) const {
-			std::array<double, 16> _tmp;
-			Matrix4x4::Subtract(data, _m, _tmp);
-			return Matrix4x4(_tmp);
-		}
-		Matrix4x4 operator-(double _v) const {
-			std::array<double, 16> _tmp;
-			for (int i = 0; i < 16; ++i) _tmp[i] = data[i] - _v;
-			return Matrix4x4(_tmp);
-		}
-		friend Matrix4x4 operator-(const std::array<double, 16>& l, const Matrix4x4& r) {
-			std::array<double, 16> _tmp;
-			Matrix4x4::Subtract(l, r.data, _tmp);
-			return Matrix4x4(_tmp);
-		}
-		friend Matrix4x4 operator-(double _v, const Matrix4x4& r) {
-			std::array<double, 16> _tmp;
-			for (int i = 0; i < 16; ++i) _tmp[i] = _v - r.data[i];
-			return Matrix4x4(_tmp);
+		friend SquareMatrix<D> operator+(double _v, const SquareMatrix<D>& r) {
+			std::array<double, CellCount> _tmp;
+			for (int i = 0; i < CellCount; ++i) _tmp[i] = _v + r.data[i];
+			return SquareMatrix<D>(_tmp);
 		}
 
-		Matrix4x4 operator*(const Matrix4x4& _m) const {
-			std::array<double, 16> _tmp;
-			Matrix4x4::Multiply(data, _m.data, _tmp);
-			return Matrix4x4(_tmp);
+		SquareMatrix<D> operator-(const SquareMatrix<D>& _m) const {
+			std::array<double, CellCount> _tmp;
+			SquareMatrix<D>::Subtract(data, _m.data, _tmp);
+			return SquareMatrix<D>(_tmp);
 		}
-		Matrix4x4 operator*(const std::array<double, 16>& _m) const {
-			std::array<double, 16> _tmp;
-			Matrix4x4::Multiply(data, _m, _tmp);
-			return Matrix4x4(_tmp);
+		SquareMatrix<D> operator-(const std::array<double, CellCount>& _m) const {
+			std::array<double, CellCount> _tmp;
+			SquareMatrix<D>::Subtract(data, _m, _tmp);
+			return SquareMatrix<D>(_tmp);
 		}
-		Matrix4x4 operator*(double _v) const {
-			std::array<double, 16> _tmp;
-			for (int i = 0; i < 16; ++i) _tmp[i] = data[i] * _v;
-			return Matrix4x4(_tmp);
+		SquareMatrix<D> operator-(double _v) const {
+			std::array<double, CellCount> _tmp;
+			for (int i = 0; i < CellCount; ++i) _tmp[i] = data[i] - _v;
+			return SquareMatrix<D>(_tmp);
 		}
-		friend Matrix4x4 operator*(const std::array<double, 16>& l, const Matrix4x4& r) {
-			std::array<double, 16> _tmp;
-			Matrix4x4::Multiply(l, r.data, _tmp);
-			return Matrix4x4(_tmp);
+		friend SquareMatrix<D> operator-(const std::array<double, CellCount>& l, const SquareMatrix<D>& r) {
+			std::array<double, CellCount> _tmp;
+			SquareMatrix<D>::Subtract(l, r.data, _tmp);
+			return SquareMatrix<D>(_tmp);
 		}
-		friend Matrix4x4 operator*(double _v, const Matrix4x4& r) {
-			std::array<double, 16> _tmp;
-			for (int i = 0; i < 16; ++i) _tmp[i] = _v * r.data[i];
-			return Matrix4x4(_tmp);
+		friend SquareMatrix<D> operator-(double _v, const SquareMatrix<D>& r) {
+			std::array<double, CellCount> _tmp;
+			for (int i = 0; i < CellCount; ++i) _tmp[i] = _v - r.data[i];
+			return SquareMatrix<D>(_tmp);
 		}
 
-		Vector4 operator*(const Vector4& _v) const {
-			return Vector4(
-				data[0] * _v.x + data[1] * _v.y + data[2] * _v.z + data[3] * _v.w,
-				data[4] * _v.x + data[5] * _v.y + data[6] * _v.z + data[7] * _v.w,
-				data[8] * _v.x + data[9] * _v.y + data[10] * _v.z + data[11] * _v.w,
-				data[12] * _v.x + data[13] * _v.y + data[14] * _v.z + data[15] * _v.w
-			);
+		SquareMatrix<D> operator*(const SquareMatrix<D>& _m) const {
+			std::array<double, CellCount> _tmp;
+			SquareMatrix<D>::Multiply(data, _m.data, _tmp);
+			return SquareMatrix<D>(_tmp);
+		}
+		SquareMatrix<D> operator*(const std::array<double, CellCount>& _m) const {
+			std::array<double, CellCount> _tmp;
+			SquareMatrix<D>::Multiply(data, _m, _tmp);
+			return SquareMatrix<D>(_tmp);
+		}
+		SquareMatrix<D> operator*(double _v) const {
+			std::array<double, CellCount> _tmp;
+			for (int i = 0; i < CellCount; ++i) _tmp[i] = data[i] * _v;
+			return SquareMatrix<D>(_tmp);
+		}
+		friend SquareMatrix<D> operator*(const std::array<double, CellCount>& l, const SquareMatrix<D>& r) {
+			std::array<double, CellCount> _tmp;
+			SquareMatrix<D>::Multiply(l, r.data, _tmp);
+			return SquareMatrix<D>(_tmp);
+		}
+		friend SquareMatrix<D> operator*(double _v, const SquareMatrix<D>& r) {
+			std::array<double, CellCount> _tmp;
+			for (int i = 0; i < CellCount; ++i) _tmp[i] = _v * r.data[i];
+			return SquareMatrix<D>(_tmp);
+		}
+
+		Vector<D> operator*(const Vector<D>& _v) const {
+            std::array<double, D> res;
+            for (size_t r = 0; r < D; ++r)
+                res[r] = std::inner_product(data.begin() + (r * D), data.begin() + ((r + 1) * D), _v.begin(), 0.0);
+            return res;
 		}
 
 		double& operator[](int i) { return data[i]; }
 		const double& operator[](int i) const { return data[i]; }
 
-		std::array<double, 16>& Data() { return data; }
-		const std::array<double, 16>& Data() const { return data; }
+		/**
+		 * @brief Get the underlying data array.
+		 * @return A reference to the underlying std::array.
+		 */
+		std::array<double, CellCount>& Data() { return data; }
+		/**
+		 * @brief Get the underlying data array as const.
+		 * @return A const reference to the underlying std::array.
+		 */
+		const std::array<double, CellCount>& Data() const { return data; }
 
-		static void Add(const std::array<double, 16>& l, const std::array<double, 16>& r, std::array<double, 16>& res) {
+		/**
+		 * @brief Static math function to add two arrays element-wise.
+		 */
+		static void Add(const std::array<double, CellCount>& l, const std::array<double, CellCount>& r, std::array<double, CellCount>& res) {
 			std::transform(l.cbegin(), l.cend(), r.cbegin(), res.begin(), std::plus<double>());
 		}
-		static void Add(const Matrix4x4& l, const Matrix4x4& r, Matrix4x4& res) { Matrix4x4::Add(l.data, r.data, res.data); }
+		/**
+		 * @brief Static math function to add two matrices.
+		 */
+		static void Add(const SquareMatrix<D>& l, const SquareMatrix<D>& r, SquareMatrix<D>& res) { SquareMatrix<D>::Add(l.data, r.data, res.data); }
 
-		static void Subtract(const std::array<double, 16>& l, const std::array<double, 16>& r, std::array<double, 16>& res) {
+		/**
+		 * @brief Static math function to subtract two arrays element-wise.
+		 */
+		static void Subtract(const std::array<double, CellCount>& l, const std::array<double, CellCount>& r, std::array<double, CellCount>& res) {
 			std::transform(l.cbegin(), l.cend(), r.cbegin(), res.begin(), std::minus<double>());
 		}
-		static void Subtract(const Matrix4x4& l, const Matrix4x4& r, Matrix4x4& res) { Matrix4x4::Subtract(l.data, r.data, res.data); }
+		/**
+		 * @brief Static math function to subtract two matrices.
+		 */
+		static void Subtract(const SquareMatrix<D>& l, const SquareMatrix<D>& r, SquareMatrix<D>& res) { SquareMatrix<D>::Subtract(l.data, r.data, res.data); }
 
-		static void Multiply(const std::array<double, 16>& l, const std::array<double, 16>& r, std::array<double, 16>& res) {
+		/**
+		 * @brief Static math function to multiply two arrays (matrix multiplication).
+		 */
+		static void Multiply(const std::array<double, CellCount>& l, const std::array<double, CellCount>& r, std::array<double, CellCount>& res) {
 			auto res_ptr = res.begin();
-			for (int _r = 0; _r < 4; ++_r) {
-				for (int _c = 0; _c < 4; ++_c, ++res_ptr)
-					(*res_ptr) = (l[_r * 4] * r[_c]) + (l[_r * 4 + 1] * r[_c + 4]) + (l[_r * 4 + 2] * r[_c + 8]) + (l[_r * 4 + 3] * r[_c + 12]);
+			for (int _r = 0; _r < D; ++_r) {
+				for (int _c = 0; _c < D; ++_c, ++res_ptr) {
+                    (*res_ptr) = 0;
+                    for (int i = 0; i < D; ++i)
+                        (*res_ptr) += l[_r * D + i] * r[_c + (D * i)];
+                }
 			}
 		}
-		static void Multiply(const Matrix4x4& l, const Matrix4x4& r, Matrix4x4& res) { Matrix4x4::Multiply(l.data, r.data, res.data); }
+		/**
+		 * @brief Static math function to multiply two matrices.
+		 */
+		static void Multiply(const SquareMatrix<D>& l, const SquareMatrix<D>& r, SquareMatrix<D>& res) { SquareMatrix<D>::Multiply(l.data, r.data, res.data); }
 
-		static void GetIdentity(std::array<double, 16>& res, double scalar = 1.0) {
-			std::array<double, 16> _tmp = {scalar, 0, 0, 0,
-						       0, scalar, 0, 0,
-						       0, 0, scalar, 0,
-						       0, 0, 0, scalar};
-			res.swap(_tmp);
+		/**
+		 * @brief Generates an identity matrix into an array.
+		 * @param res The array to store the result in.
+		 * @param scalar The value for the diagonal elements.
+		 */
+		static void GetIdentity(std::array<double, CellCount>& res, double scalar = 1.0) {
+            for (size_t r = 0; r < D; ++r) {
+                size_t idx = r * D;
+                if (r > 0) std::fill_n(res.begin() + idx, r, 0.0);
+                res[idx + r] = scalar;
+                if (r < (D - 1)) std::fill_n(res.begin() + (idx + r + 1), D - (r + 1), 0.0);
+            }
 		}
-		static void GetIdentity(Matrix4x4& res, double scalar = 1.0) { Matrix4x4::GetIdentity(res.data, scalar); }
-		static Matrix4x4 GetIdentity(double scalar = 1.0) {
-			std::array<double, 16> _tmp;
-			Matrix4x4::GetIdentity(_tmp, scalar);
-			return Matrix4x4(_tmp);
+		/**
+		 * @brief Generates an identity matrix into another matrix object.
+		 * @param res The matrix to store the result in.
+		 * @param scalar The value for the diagonal elements.
+		 */
+		static void GetIdentity(SquareMatrix<D>& res, double scalar = 1.0) { SquareMatrix<D>::GetIdentity(res.data, scalar); }
+		/**
+		 * @brief Generates and returns an identity matrix.
+		 * @param scalar The value for the diagonal elements.
+		 * @return The generated identity matrix.
+		 */
+		static SquareMatrix<D> GetIdentity(double scalar = 1.0) {
+			std::array<double, CellCount> _tmp;
+			SquareMatrix<D>::GetIdentity(_tmp, scalar);
+			return SquareMatrix<D>(_tmp);
 		}
+    };
 
-		static void GetTranslation3D(std::array<double, 16>& res, const Vector3& amount) {
-			std::array<double, 16> _tmp = {1, 0, 0, amount.x,
-						       0, 1, 0, amount.y,
-						       0, 0, 1, amount.z,
-						       0, 0, 0, 1};
-			res.swap(_tmp);
-		}
-		static void GetTranslation3D(Matrix4x4& res, const Vector3& amount) { Matrix4x4::GetTranslation3D(res.data, amount); }
-		static Matrix4x4 GetTranslation3D(const Vector3& amount) {
-			std::array<double, 16> _tmp;
-			Matrix4x4::GetTranslation3D(_tmp, amount);
-			return Matrix4x4(_tmp);
-		}
-
-		static void GetScale3D(std::array<double, 16>& res, const Vector3& amount) {
-			std::array<double, 16> _tmp = {amount.x, 0, 0, 0,
-						       0, amount.y, 0, 0,
-						       0, 0, amount.z, 0,
-						       0, 0, 0, 1};
-			res.swap(_tmp);
-		}
-		static void GetScale3D(Matrix4x4& res, const Vector3& amount) { Matrix4x4::GetScale3D(res.data, amount); }
-		static Matrix4x4 GetScale3D(const Vector3& amount) {
-			std::array<double, 16> _tmp;
-			Matrix4x4::GetScale3D(_tmp, amount);
-			return Matrix4x4(_tmp);
-		}
-
-		static void GetRotation3D(std::array<double, 16>& res, const Quaternion& rotation) {
-			Quaternion q = rotation.Unit(); // On failure, this will return a zero quaternion, which in will result in return the identity matrix.
-
-			double bb = q.b * q.b, cc = q.c * q.c, dd = q.d * q.d;
-			double bc = q.b * q.c, bd = q.b * q.d, cd = q.c * q.d;
-			double ad = q.a * q.d, ac = q.a * q.c, ab = q.a * q.b;
-
-			std::array<double, 16> _tmp = {1 - 2 * (cc + dd), 2 * (bc - ad), 2 * (bd + ac), 0,
-						       2 * (bc + ad), 1 - 2 * (bb + dd), 2 * (cd - ab), 0,
-						       2 * (bd - ac), 2 * (cd + ab), 1 - 2 * (bb + cc), 0,
-						       0, 0, 0, 1};
-			res.swap(_tmp);
-		}
-		static void GetRotation3D(std::array<double, 16>& res, const Vector3& angles) { Matrix4x4::GetRotation3D(res, Quaternion::CreateRotation(angles)); }
-		static void GetRotation3D(std::array<double, 16>& res, double angle_x, double angle_y, double angle_z) { Matrix4x4::GetRotation3D(res, Quaternion::CreateRotation(angle_x, angle_y, angle_z)); }
-		static void GetRotation3D(Matrix4x4& res, const Quaternion& rotation) { Matrix4x4::GetRotation3D(res.data, rotation); }
-		static void GetRotation3D(Matrix4x4& res, const Vector3& angles) { Matrix4x4::GetRotation3D(res.data, angles); }
-		static void GetRotation3D(Matrix4x4& res, double angle_x, double angle_y, double angle_z) { Matrix4x4::GetRotation3D(res.data, angle_x, angle_y, angle_z); }
-		static Matrix4x4 GetRotation3D(const Quaternion& rotation) {
-			std::array<double, 16> _tmp;
-			Matrix4x4::GetRotation3D(_tmp, rotation);
-			return Matrix4x4(_tmp);
-		}
-		static Matrix4x4 GetRotation3D(const Vector3& angles) {
-			std::array<double, 16> _tmp;
-			Matrix4x4::GetRotation3D(_tmp, angles);
-			return Matrix4x4(_tmp);
-		}
-		static Matrix4x4 GetRotation3D(double angle_x, double angle_y, double angle_z) {
-			std::array<double, 16> _tmp;
-			Matrix4x4::GetRotation3D(_tmp, angle_x, angle_y, angle_z);
-			return Matrix4x4(_tmp);
-		}
-
-		/// @brief Builds combined 3D transform matrix (scale, rotation, translation).
-		static void GetTransformation3D(std::array<double, 16>& res, const Vector3& translation, const Vector3& rotation, const Vector3& scale);
-		static void GetTransformation3D(Matrix4x4& res, const Vector3& translation, const Vector3& rotation, const Vector3& scale) {
-			Matrix4x4::GetTransformation3D(res.data, translation, rotation, scale);
-		}
-		static Matrix4x4 GetTransformation3D(const Vector3& translation, const Vector3& rotation, const Vector3& scale) {
-			std::array<double, 16> _tmp;
-			Matrix4x4::GetTransformation3D(_tmp, translation, rotation, scale);
-			return Matrix4x4(_tmp);
-		}
-
-		/// @brief Builds frustum projection matrix.
-		static void GetFrustumProjection(std::array<double, 16>& res, double left, double right, double top, double bottom, double near, double far);
-		static void GetFrustumProjection(Matrix4x4& res, double left, double right, double top, double bottom, double near, double far) {
-			Matrix4x4::GetFrustumProjection(res.data, left, right, top, bottom, near, far);
-		}
-		static Matrix4x4 GetFrustumProjection(double left, double right, double top, double bottom, double near, double far) {
-			std::array<double, 16> _tmp;
-			Matrix4x4::GetFrustumProjection(_tmp, left, right, top, bottom, near, far);
-			return Matrix4x4(_tmp);
-		}
-		
-		/// @brief Builds perspective projection matrix.
-		static void GetPerspectiveProjection(std::array<double, 16>& res, double fovY, double aspect, double near, double far);
-		static void GetPerspectiveProjection(Matrix4x4& res, double fovY, double aspect, double near, double far) {
-			Matrix4x4::GetPerspectiveProjection(res.data, fovY, aspect, near, far);
-		}
-		static Matrix4x4 GetPerspectiveProjection(double fovY, double aspect, double near, double far) {
-			std::array<double, 16> _tmp;
-			Matrix4x4::GetPerspectiveProjection(_tmp, fovY, aspect, near, far);
-			return Matrix4x4(_tmp);
-		}
-
-		/// @brief Builds orthographic projection matrix.
-		static void GetOrthographicProjection(std::array<double, 16>& res, double left, double right, double top, double bottom, double near, double far);
-		static void GetOrthographicProjection(Matrix4x4& res, double left, double right, double top, double bottom, double near, double far) {
-			Matrix4x4::GetOrthographicProjection(res.data, left, right, top, bottom, near, far);
-		}
-		static Matrix4x4 GetOrthographicProjection(double left, double right, double top, double bottom, double near, double far) {
-			std::array<double, 16> _tmp;
-			Matrix4x4::GetOrthographicProjection(_tmp, left, right, top, bottom, near, far);
-			return Matrix4x4(_tmp);
-		}
-	};
-
-	/// @brief 3x3 matrix with row-major storage.
-	struct Matrix3x3 {
-	private:
-		std::array<double, 9> data;
-	public:
-		Matrix3x3() { data.fill(0); }
-		Matrix3x3(double _fill) { data.fill(_fill); }
-		Matrix3x3(const std::array<double, 9>& _data) : data(_data) {}
-
-		Matrix3x3 operator-() const {
-			std::array<double, 9> _tmp;
-			for (int i = 0; i < 9; ++i) _tmp[i] = -data[i];
-			return Matrix3x3(_tmp);
-		}
-		double& operator()(int r, int c) { return data[r * 3 + c]; }
-		const double& operator()(int r, int c) const { return data[r * 3 + c]; }
-		
-		Matrix3x3& operator=(const Matrix3x3& _m) { data = _m.data; return *this; }
-		Matrix3x3& operator=(const std::array<double, 9>& _m) { data = _m; return *this; }
-		Matrix3x3& operator=(double _fill) { data.fill(_fill); return *this; }
-		Matrix3x3& operator+=(const std::array<double, 9>& _m) { Matrix3x3::Add(data, _m, data); return *this; }
-		Matrix3x3& operator+=(const Matrix3x3& _m) { Matrix3x3::Add(data, _m.data, data); return *this; }
-		Matrix3x3& operator+=(double _v) {
-			for (double& v : data) v += _v;
-			return *this;
-		}
-		Matrix3x3& operator-=(const std::array<double, 9>& _m) { Matrix3x3::Subtract(data, _m, data); return *this; }
-		Matrix3x3& operator-=(const Matrix3x3& _m) { Matrix3x3::Subtract(data, _m.data, data); return *this; }
-		Matrix3x3& operator-=(double _v) {
-			for (double& v : data) v -= _v;
-			return *this;
-		}
-
-		Matrix3x3& operator*=(double _s) {
-			for (double& v : data) v *= _s;
-			return *this;
-		}
-		Matrix3x3& operator*=(const std::array<double, 9>& _m) {
-			std::array<double, 9> _tmp;
-			Matrix3x3::Multiply(data, _m, _tmp);
-			data.swap(_tmp);
-			return *this;
-		}
-		Matrix3x3& operator*=(const Matrix3x3& _m) {
-			std::array<double, 9> _tmp;
-			Matrix3x3::Multiply(data, _m.data, _tmp);
-			data.swap(_tmp);
-			return *this;
-		}
-
-		Matrix3x3 operator+(const Matrix3x3& _m) const {
-			std::array<double, 9> _tmp;
-			Matrix3x3::Add(data, _m.data, _tmp);
-			return Matrix3x3(_tmp);
-		}
-		Matrix3x3 operator+(const std::array<double, 9>& _m) const {
-			std::array<double, 9> _tmp;
-			Matrix3x3::Add(data, _m, _tmp);
-			return Matrix3x3(_tmp);
-		}
-		Matrix3x3 operator+(double _v) const {
-			std::array<double, 9> _tmp;
-			for (int i = 0; i < 9; ++i) _tmp[i] = data[i] + _v;
-			return Matrix3x3(_tmp);
-		}
-		friend Matrix3x3 operator+(const std::array<double, 9>& l, const Matrix3x3& r) {
-			std::array<double, 9> _tmp;
-			Matrix3x3::Add(l, r.data, _tmp);
-			return Matrix3x3(_tmp);
-		}
-		friend Matrix3x3 operator+(double _v, const Matrix3x3& r) {
-			std::array<double, 9> _tmp;
-			for (int i = 0; i < 9; ++i) _tmp[i] = _v + r.data[i];
-			return Matrix3x3(_tmp);
-		}
-
-		Matrix3x3 operator-(const Matrix3x3& _m) const {
-			std::array<double, 9> _tmp;
-			Matrix3x3::Subtract(data, _m.data, _tmp);
-			return Matrix3x3(_tmp);
-		}
-		Matrix3x3 operator-(const std::array<double, 9>& _m) const {
-			std::array<double, 9> _tmp;
-			Matrix3x3::Subtract(data, _m, _tmp);
-			return Matrix3x3(_tmp);
-		}
-		Matrix3x3 operator-(double _v) const {
-			std::array<double, 9> _tmp;
-			for (int i = 0; i < 9; ++i) _tmp[i] = data[i] - _v;
-			return Matrix3x3(_tmp);
-		}
-		friend Matrix3x3 operator-(const std::array<double, 9>& l, const Matrix3x3& r) {
-			std::array<double, 9> _tmp;
-			Matrix3x3::Subtract(l, r.data, _tmp);
-			return Matrix3x3(_tmp);
-		}
-		friend Matrix3x3 operator-(double _v, const Matrix3x3& r) {
-			std::array<double, 9> _tmp;
-			for (int i = 0; i < 9; ++i) _tmp[i] = _v - r.data[i];
-			return Matrix3x3(_tmp);
-		}
-
-		Matrix3x3 operator*(const Matrix3x3& _m) const {
-			std::array<double, 9> _tmp;
-			Matrix3x3::Multiply(data, _m.data, _tmp);
-			return Matrix3x3(_tmp);
-		}
-		Matrix3x3 operator*(const std::array<double, 9>& _m) const {
-			std::array<double, 9> _tmp;
-			Matrix3x3::Multiply(data, _m, _tmp);
-			return Matrix3x3(_tmp);
-		}
-		Matrix3x3 operator*(double _v) const {
-			std::array<double, 9> _tmp;
-			for (int i = 0; i < 9; ++i) _tmp[i] = data[i] * _v;
-			return Matrix3x3(_tmp);
-		}
-		friend Matrix3x3 operator*(const std::array<double, 9>& l, const Matrix3x3& r) {
-			std::array<double, 9> _tmp;
-			Matrix3x3::Multiply(l, r.data, _tmp);
-			return Matrix3x3(_tmp);
-		}
-		friend Matrix3x3 operator*(double _v, const Matrix3x3& r) {
-			std::array<double, 9> _tmp;
-			for (int i = 0; i < 9; ++i) _tmp[i] = _v * r.data[i];
-			return Matrix3x3(_tmp);
-		}
-
-		Vector3 operator*(const Vector3& _v) const {
-			return Vector3(
-				data[0] * _v.x + data[1] * _v.y + data[2] * _v.z,
-				data[3] * _v.x + data[4] * _v.y + data[5] * _v.z,
-				data[6] * _v.x + data[7] * _v.y + data[8] * _v.z
-			);
-		}
-
-		double& operator[](int i) { return data[i]; }
-		const double& operator[](int i) const { return data[i]; }
-
-		std::array<double, 9>& Data() { return data; }
-		const std::array<double, 9>& Data() const { return data; }
-
-		static void Add(const std::array<double, 9>& l, const std::array<double, 9>& r, std::array<double, 9>& res) {
-			std::transform(l.cbegin(), l.cend(), r.cbegin(), res.begin(), std::plus<double>());
-		}
-		static void Add(const Matrix3x3& l, const Matrix3x3& r, Matrix3x3& res) { Matrix3x3::Add(l.data, r.data, res.data); }
-
-		static void Subtract(const std::array<double, 9>& l, const std::array<double, 9>& r, std::array<double, 9>& res) {
-			std::transform(l.cbegin(), l.cend(), r.cbegin(), res.begin(), std::minus<double>());
-		}
-		static void Subtract(const Matrix3x3& l, const Matrix3x3& r, Matrix3x3& res) { Matrix3x3::Subtract(l.data, r.data, res.data); }
-
-		static void Multiply(const std::array<double, 9>& l, const std::array<double, 9>& r, std::array<double, 9>& res) {
-			auto res_ptr = res.begin();
-			for (int _r = 0; _r < 3; ++_r) {
-				for (int _c = 0; _c < 3; ++_c, ++res_ptr)
-					(*res_ptr) = (l[_r * 3] * r[_c]) + (l[_r * 3 + 1] * r[_c + 3]) + (l[_r * 3 + 2] * r[_c + 6]);
-			}
-		}
-		static void Multiply(const Matrix3x3& l, const Matrix3x3& r, Matrix3x3& res) { Matrix3x3::Multiply(l.data, r.data, res.data); }
-
-		static void GetIdentity(std::array<double, 9>& res, double scalar = 1.0) {
-			std::array<double, 9> _tmp = {scalar, 0, 0,
-										  0, scalar, 0,
-										  0, 0, scalar};
-			res.swap(_tmp);
-		}
-		static void GetIdentity(Matrix3x3& res, double scalar = 1.0) { Matrix3x3::GetIdentity(res.data, scalar); }
-		static Matrix3x3 GetIdentity(double scalar = 1.0) {
-			std::array<double, 9> _tmp;
-			Matrix3x3::GetIdentity(_tmp, scalar);
-			return Matrix3x3(_tmp);
-		}
-
-		static void GetTranslation2D(std::array<double, 9>& res, const Vector2& amount) {
-			std::array<double, 9> _tmp = {1, 0, amount.x,
-						       			  0, 1, amount.y,
-						       			  0, 0, 1};
-			res.swap(_tmp);
-		}
-		static void GetTranslation2D(Matrix3x3& res, const Vector3& amount) { Matrix3x3::GetTranslation2D(res.data, amount); }
-		static Matrix3x3 GetTranslation2D(const Vector3& amount) {
-			std::array<double, 9> _tmp;
-			Matrix3x3::GetTranslation2D(_tmp, amount);
-			return Matrix3x3(_tmp);
-		}
-
-		static void GetScale2D(std::array<double, 9>& res, const Vector2& amount) {
-			std::array<double, 9> _tmp = {amount.x, 0, 0,
-						       			  0, amount.y, 0,
-						       			  0, 0, 1};
-			res.swap(_tmp);
-		}
-		static void GetScale2D(Matrix3x3& res, const Vector2& amount) { Matrix3x3::GetScale2D(res.data, amount); }
-		static Matrix3x3 GetScale2D(const Vector2& amount) {
-			std::array<double, 9> _tmp;
-			Matrix3x3::GetScale2D(_tmp, amount);
-			return Matrix3x3(_tmp);
-		}
-
-		static void GetRotation2D(std::array<double, 9>& res, double angle) {
-			double s = std::sin(angle), c = std::cos(angle);
-			std::array<double, 9> _tmp = {c, -s, 0,
-										  s, c, 0,
-										  0, 0, 1};
-			res.swap(_tmp);
-		}
-		static void GetRotation2D(Matrix3x3& res, double angle) { Matrix3x3::GetRotation2D(res.data, angle); }
-		static Matrix3x3 GetRotation2D(double angle) {
-			std::array<double, 9> _tmp;
-			Matrix3x3::GetRotation2D(_tmp, angle);
-			return Matrix3x3(_tmp);
-		}
-
-		/// @brief Builds combined 2D homogeneous transform matrix.
-		static void GetTransformation2D(std::array<double, 9>& res, const Vector3& translation, double rotation_angle, const Vector3& scale);
-		static void GetTransformation2D(Matrix3x3& res, const Vector3& translation, double rotation_angle, const Vector3& scale) {
-			Matrix3x3::GetTransformation2D(res.data, translation, rotation_angle, scale);
-		}
-		static Matrix3x3 GetTransformation2D(const Vector3& translation, double rotation_angle, const Vector3& scale) {
-			std::array<double, 9> _tmp;
-			Matrix3x3::GetTransformation2D(_tmp, translation, rotation_angle, scale);
-			return Matrix3x3(_tmp);
-		}
-
-		/// @brief Builds 2D viewport transform matrix.
-		static void GetViewportTransform2D(std::array<double, 9>& res, double left_i, double right_i, double top_i, double bottom_i, double left_o, double right_o, double top_o, double bottom_o);
-		static void GetViewportTransform2D(Matrix3x3& res, double left_i, double right_i, double top_i, double bottom_i, double left_o, double right_o, double top_o, double bottom_o) {
-			Matrix3x3::GetViewportTransform2D(res.data, left_i, right_i, top_i, bottom_i, left_o, right_o, top_o, bottom_o);
-		}
-		static Matrix3x3 GetViewportTransform2D(double left_i, double right_i, double top_i, double bottom_i, double left_o, double right_o, double top_o, double bottom_o) {
-			std::array<double, 9> _tmp;
-			Matrix3x3::GetViewportTransform2D(_tmp, left_i, right_i, top_i, bottom_i, left_o, right_o, top_o, bottom_o);
-			return Matrix3x3(_tmp);
-		}
-
-		static void GetScale3D(std::array<double, 9>& res, const Vector3& amount) {
-			std::array<double, 9> _tmp = {amount.x, 0, 0,
-						       0, amount.y, 0,
-						       0, 0, amount.z};
-			res.swap(_tmp);
-		}
-		static void GetScale3D(Matrix3x3& res, const Vector3& amount) { Matrix3x3::GetScale3D(res.data, amount); }
-		static Matrix3x3 GetScale3D(const Vector3& amount) {
-			std::array<double, 9> _tmp;
-			Matrix3x3::GetScale3D(_tmp, amount);
-			return Matrix3x3(_tmp);
-		}
-
-		static void GetRotation3D(std::array<double, 9>& res, const Quaternion& rotation) {
-			Quaternion q = rotation.Unit(); // On failure, this will return a zero quaternion, which in will result in return the identity matrix.
-
-			double bb = q.b * q.b, cc = q.c * q.c, dd = q.d * q.d;
-			double bc = q.b * q.c, bd = q.b * q.d, cd = q.c * q.d;
-			double ad = q.a * q.d, ac = q.a * q.c, ab = q.a * q.b;
-
-			std::array<double, 9> _tmp = {1 - 2 * (cc + dd), 2 * (bc - ad), 2 * (bd + ac),
-						       2 * (bc + ad), 1 - 2 * (bb + dd), 2 * (cd - ab),
-						       2 * (bd - ac), 2 * (cd + ab), 1 - 2 * (bb + cc)};
-			res.swap(_tmp);
-		}
-		static void GetRotation3D(std::array<double, 9>& res, const Vector3& angles) { Matrix3x3::GetRotation3D(res, Quaternion::CreateRotation(angles)); }
-		static void GetRotation3D(std::array<double, 9>& res, double angle_x, double angle_y, double angle_z) { Matrix3x3::GetRotation3D(res, Quaternion::CreateRotation(angle_x, angle_y, angle_z)); }
-		static void GetRotation3D(Matrix3x3& res, const Quaternion& rotation) { Matrix3x3::GetRotation3D(res.data, rotation); }
-		static void GetRotation3D(Matrix3x3& res, const Vector3& angles) { Matrix3x3::GetRotation3D(res.data, angles); }
-		static void GetRotation3D(Matrix3x3& res, double angle_x, double angle_y, double angle_z) { Matrix3x3::GetRotation3D(res.data, angle_x, angle_y, angle_z); }
-		static Matrix3x3 GetRotation3D(const Quaternion& rotation) {
-			std::array<double, 9> _tmp;
-			Matrix3x3::GetRotation3D(_tmp, rotation);
-			return Matrix3x3(_tmp);
-		}
-		static Matrix3x3 GetRotation3D(const Vector3& angles) {
-			std::array<double, 9> _tmp;
-			Matrix3x3::GetRotation3D(_tmp, angles);
-			return Matrix3x3(_tmp);
-		}
-		static Matrix3x3 GetRotation3D(double angle_x, double angle_y, double angle_z) {
-			std::array<double, 9> _tmp;
-			Matrix3x3::GetRotation3D(_tmp, angle_x, angle_y, angle_z);
-			return Matrix3x3(_tmp);
-		}
-	};
-
-	/// @brief 2x2 matrix with row-major storage.
-	struct Matrix2x2 {
-	private:
-		std::array<double, 4>data;
-	public:
-		Matrix2x2() { data.fill(0); }
-		Matrix2x2(double _fill) { data.fill(_fill); }
-		Matrix2x2(const std::array<double, 4>& _data) : data(_data) {}
-
-		Matrix2x2 operator-() const {
-			std::array<double, 4> _tmp;
-			for (int i = 0; i < 4; ++i) _tmp[i] = -data[i];
-			return Matrix2x2(_tmp);
-		}
-		double& operator()(int r, int c) { return data[r * 2 + c]; }
-		const double& operator()(int r, int c) const { return data[r * 2 + c]; }
-		
-		Matrix2x2& operator=(const Matrix2x2& _m) { data = _m.data; return *this; }
-		Matrix2x2& operator=(const std::array<double, 4>& _m) { data = _m; return *this; }
-		Matrix2x2& operator=(double _fill) { data.fill(_fill); return *this; }
-		Matrix2x2& operator+=(const std::array<double, 4>& _m) { Matrix2x2::Add(data, _m, data); return *this; }
-		Matrix2x2& operator+=(const Matrix2x2& _m) { Matrix2x2::Add(data, _m.data, data); return *this; }
-		Matrix2x2& operator+=(double _v) {
-			for (double& v : data) v += _v;
-			return *this;
-		}
-		Matrix2x2& operator-=(const std::array<double, 4>& _m) { Matrix2x2::Subtract(data, _m, data); return *this; }
-		Matrix2x2& operator-=(const Matrix2x2& _m) { Matrix2x2::Subtract(data, _m.data, data); return *this; }
-		Matrix2x2& operator-=(double _v) {
-			for (double& v : data) v -= _v;
-			return *this;
-		}
-
-		Matrix2x2& operator*=(double _s) {
-			for (double& v : data) v *= _s;
-			return *this;
-		}
-		Matrix2x2& operator*=(const std::array<double, 4>& _m) {
-			std::array<double, 4> _tmp;
-			Matrix2x2::Multiply(data, _m, _tmp);
-			data.swap(_tmp);
-			return *this;
-		}
-		Matrix2x2& operator*=(const Matrix2x2& _m) {
-			std::array<double, 4> _tmp;
-			Matrix2x2::Multiply(data, _m.data, _tmp);
-			data.swap(_tmp);
-			return *this;
-		}
-
-		Matrix2x2 operator+(const Matrix2x2& _m) const {
-			std::array<double, 4> _tmp;
-			Matrix2x2::Add(data, _m.data, _tmp);
-			return Matrix2x2(_tmp);
-		}
-		Matrix2x2 operator+(const std::array<double, 4>& _m) const {
-			std::array<double, 4> _tmp;
-			Matrix2x2::Add(data, _m, _tmp);
-			return Matrix2x2(_tmp);
-		}
-		Matrix2x2 operator+(double _v) const {
-			std::array<double, 4> _tmp;
-			for (int i = 0; i < 4; ++i) _tmp[i] = data[i] + _v;
-			return Matrix2x2(_tmp);
-		}
-		friend Matrix2x2 operator+(const std::array<double, 4>& l, const Matrix2x2& r) {
-			std::array<double, 4> _tmp;
-			Matrix2x2::Add(l, r.data, _tmp);
-			return Matrix2x2(_tmp);
-		}
-		friend Matrix2x2 operator+(double _v, const Matrix2x2& r) {
-			std::array<double, 4> _tmp;
-			for (int i = 0; i < 4; ++i) _tmp[i] = _v + r.data[i];
-			return Matrix2x2(_tmp);
-		}
-
-		Matrix2x2 operator-(const Matrix2x2& _m) const {
-			std::array<double, 4> _tmp;
-			Matrix2x2::Subtract(data, _m.data, _tmp);
-			return Matrix2x2(_tmp);
-		}
-		Matrix2x2 operator-(const std::array<double, 4>& _m) const {
-			std::array<double, 4> _tmp;
-			Matrix2x2::Subtract(data, _m, _tmp);
-			return Matrix2x2(_tmp);
-		}
-		Matrix2x2 operator-(double _v) const {
-			std::array<double, 4> _tmp;
-			for (int i = 0; i < 4; ++i) _tmp[i] = data[i] - _v;
-			return Matrix2x2(_tmp);
-		}
-		friend Matrix2x2 operator-(const std::array<double, 4>& l, const Matrix2x2& r) {
-			std::array<double, 4> _tmp;
-			Matrix2x2::Subtract(l, r.data, _tmp);
-			return Matrix2x2(_tmp);
-		}
-		friend Matrix2x2 operator-(double _v, const Matrix2x2& r) {
-			std::array<double, 4> _tmp;
-			for (int i = 0; i < 4; ++i) _tmp[i] = _v - r.data[i];
-			return Matrix2x2(_tmp);
-		}
-
-		Matrix2x2 operator*(const Matrix2x2& _m) const {
-			std::array<double, 4> _tmp;
-			Matrix2x2::Multiply(data, _m.data, _tmp);
-			return Matrix2x2(_tmp);
-		}
-		Matrix2x2 operator*(const std::array<double, 4>& _m) const {
-			std::array<double, 4> _tmp;
-			Matrix2x2::Multiply(data, _m, _tmp);
-			return Matrix2x2(_tmp);
-		}
-		Matrix2x2 operator*(double _v) const {
-			std::array<double, 4> _tmp;
-			for (int i = 0; i < 4; ++i) _tmp[i] = data[i] * _v;
-			return Matrix2x2(_tmp);
-		}
-		friend Matrix2x2 operator*(const std::array<double, 4>& l, const Matrix2x2& r) {
-			std::array<double, 4> _tmp;
-			Matrix2x2::Multiply(l, r.data, _tmp);
-			return Matrix2x2(_tmp);
-		}
-		friend Matrix2x2 operator*(double _v, const Matrix2x2& r) {
-			std::array<double, 4> _tmp;
-			for (int i = 0; i < 4; ++i) _tmp[i] = _v * r.data[i];
-			return Matrix2x2(_tmp);
-		}
-
-		Vector2 operator*(const Vector2& _v) const {
-			return Vector2(
-				data[0] * _v.x + data[1] * _v.y,
-				data[2] * _v.x + data[3] * _v.y
-			);
-		}
-
-		double& operator[](int i) { return data[i]; }
-		const double& operator[](int i) const { return data[i]; }
-
-		std::array<double, 4>& Data() { return data; }
-		const std::array<double, 4>& Data() const { return data; }
-
-		static void Add(const std::array<double, 4>& l, const std::array<double, 4>& r, std::array<double, 4>& res) {
-			std::transform(l.cbegin(), l.cend(), r.cbegin(), res.begin(), std::plus<double>());
-		}
-		static void Add(const Matrix2x2& l, const Matrix2x2& r, Matrix2x2& res) { Matrix2x2::Add(l.data, r.data, res.data); }
-
-		static void Subtract(const std::array<double, 4>& l, const std::array<double, 4>& r, std::array<double, 4>& res) {
-			std::transform(l.cbegin(), l.cend(), r.cbegin(), res.begin(), std::minus<double>());
-		}
-		static void Subtract(const Matrix2x2& l, const Matrix2x2& r, Matrix2x2& res) { Matrix2x2::Subtract(l.data, r.data, res.data); }
-
-		static void Multiply(const std::array<double, 4>& l, const std::array<double, 4>& r, std::array<double, 4>& res) {
-			auto res_ptr = res.begin();
-			for (int _r = 0; _r < 2; ++_r) {
-				for (int _c = 0; _c < 2; ++_c, ++res_ptr)
-					(*res_ptr) = (l[_r * 2] * r[_c]) + (l[_r * 2 + 1] * r[_c + 2]);
-			}
-		}
-		static void Multiply(const Matrix2x2& l, const Matrix2x2& r, Matrix2x2& res) { Matrix2x2::Multiply(l.data, r.data, res.data); }
-
-		static void GetIdentity(std::array<double, 4>& res, double scalar = 1.0) {
-			std::array<double, 4> _tmp = {scalar, 0,
-										  0, scalar};
-			res.swap(_tmp);
-		}
-		static void GetIdentity(Matrix2x2& res, double scalar = 1.0) { Matrix2x2::GetIdentity(res.data, scalar); }
-		static Matrix2x2 GetIdentity(double scalar = 1.0) {
-			std::array<double, 4> _tmp;
-			Matrix2x2::GetIdentity(_tmp, scalar);
-			return Matrix2x2(_tmp);
-		}
-
-		static void GetScale(std::array<double, 4>& res, const Vector2& amount) {
-			std::array<double, 4> _tmp = {amount.x, 0,
-						       			  0, amount.y};
-			res.swap(_tmp);
-		}
-		static void GetScale(Matrix2x2& res, const Vector2& amount) { Matrix2x2::GetScale(res.data, amount); }
-		static Matrix2x2 GetScale(const Vector2& amount) {
-			std::array<double, 4> _tmp;
-			Matrix2x2::GetScale(_tmp, amount);
-			return Matrix2x2(_tmp);
-		}
-
-		static void GetRotation(std::array<double, 4>& res, double angle) {
-			double s = std::sin(angle), c = std::cos(angle);
-			std::array<double, 4> _tmp = {c, -s,
-										  s, c};
-			res.swap(_tmp);
-		}
-		static void GetRotation(Matrix2x2& res, double angle) { Matrix2x2::GetRotation(res.data, angle); }
-		static Matrix2x2 GetRotation(double angle) {
-			std::array<double, 4> _tmp;
-			Matrix2x2::GetRotation(_tmp, angle);
-			return Matrix2x2(_tmp);
-		}
-	};
+    /**
+     * @brief 2x2 Square Matrix
+     */
+    typedef SquareMatrix<2> Matrix2x2;
+    /**
+     * @brief 3x3 Square Matrix
+     */
+    typedef SquareMatrix<3> Matrix3x3;
+    /**
+     * @brief 4x4 Square Matrix
+     */
+    typedef SquareMatrix<4> Matrix4x4;
 }

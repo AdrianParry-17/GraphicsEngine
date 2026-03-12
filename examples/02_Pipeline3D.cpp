@@ -1,9 +1,4 @@
 #include "Engine/Engine.h"
-#include "Engine/Engine_3D.h"
-#include "Engine/Engine_Geometry.h"
-#include "Engine/Engine_Graphics.h"
-#include "Engine/Engine_Graphics3DPipeline.h"
-#include "Engine/Engine_Interpolation.h"
 #include "common/TerminalBufferContext.h"
 #include <chrono>
 #include <cmath>
@@ -13,19 +8,37 @@
 void RenderCube_pipe(Engine::Graphics3DPipeline<double> &pipeline) {
     // Helper function mapping 12 triangles forming a simple local cube at zero-point.
     
-    std::vector<Engine::Vertex3D<double>> vertices = {
+    std::vector<Engine::WorldVertex3D<double>> vertices = {
         // Front face (Z = 1), Color: 9
-        {-1, -1,  1, 9}, { 1, -1,  1, 9}, { 1,  1,  1, 9}, {-1,  1,  1, 9},
+        Engine::WorldVertex3D<double>({-1, -1,  1}, 9),
+        Engine::WorldVertex3D<double>({ 1, -1,  1}, 9),
+        Engine::WorldVertex3D<double>({ 1,  1,  1}, 9),
+        Engine::WorldVertex3D<double>({-1,  1,  1}, 9),
         // Back face (Z = -1), Color: 4
-        {-1, -1, -1, 4}, { 1, -1, -1, 4}, { 1,  1, -1, 4}, {-1,  1, -1, 4},
+        Engine::WorldVertex3D<double>({-1, -1, -1}, 4),
+        Engine::WorldVertex3D<double>({ 1, -1, -1}, 4),
+        Engine::WorldVertex3D<double>({ 1,  1, -1}, 4),
+        Engine::WorldVertex3D<double>({-1,  1, -1}, 4),
         // Left face (X = -1), Color: 5
-        {-1, -1, -1, 5}, {-1, -1,  1, 5}, {-1,  1,  1, 5}, {-1,  1, -1, 5},
+        Engine::WorldVertex3D<double>({-1, -1, -1}, 5),
+        Engine::WorldVertex3D<double>({-1, -1,  1}, 5),
+        Engine::WorldVertex3D<double>({-1,  1,  1}, 5),
+        Engine::WorldVertex3D<double>({-1,  1, -1}, 5),
         // Right face (X = 1), Color: 6
-        { 1, -1, -1, 6}, { 1, -1,  1, 6}, { 1,  1,  1, 6}, { 1,  1, -1, 6},
+        Engine::WorldVertex3D<double>({ 1, -1, -1}, 6),
+        Engine::WorldVertex3D<double>({ 1, -1,  1}, 6),
+        Engine::WorldVertex3D<double>({ 1,  1,  1}, 6),
+        Engine::WorldVertex3D<double>({ 1,  1, -1}, 6),
         // Top face (Y = 1), Color: 7
-        {-1,  1, -1, 7}, { 1,  1, -1, 7}, { 1,  1,  1, 7}, {-1,  1,  1, 7},
+        Engine::WorldVertex3D<double>({-1,  1, -1}, 7),
+        Engine::WorldVertex3D<double>({ 1,  1, -1}, 7),
+        Engine::WorldVertex3D<double>({ 1,  1,  1}, 7),
+        Engine::WorldVertex3D<double>({-1,  1,  1}, 7),
         // Bottom face (Y = -1), Color: 8
-        {-1, -1, -1, 8}, { 1, -1, -1, 8}, { 1, -1,  1, 8}, {-1, -1,  1, 8}
+        Engine::WorldVertex3D<double>({-1, -1, -1}, 8),
+        Engine::WorldVertex3D<double>({ 1, -1, -1}, 8),
+        Engine::WorldVertex3D<double>({ 1, -1,  1}, 8),
+        Engine::WorldVertex3D<double>({-1, -1,  1}, 8)
     };
 
     std::vector<int> indices = {
@@ -42,7 +55,7 @@ void RenderCube_pipe(Engine::Graphics3DPipeline<double> &pipeline) {
 
 int main() {
     TerminalBufferContext context(120, 30);
-    Engine::Interpolator<double> color_interpolator;
+    Engine::ScalableInterpolator<double> color_interpolator;
     Engine::ContextGraphics<double> context_g(context);
 
     // Setup 3D graphics pipeline inside bounding rect
@@ -65,7 +78,7 @@ int main() {
         
         // Cube #1 Generation
         pipeline3d.PushMatrix();
-        pipeline3d.Transform3D(
+        pipeline3d.Transform(
             Engine::Vector3(-2, 0, -8),
             Engine::Vector3(0, (5 * i) * _deg_to_rad, 0), // Rotate continuously on Y axis
             Engine::Vector3(1, 0.5, 1)                      // Scale Y to flat block shape
@@ -75,7 +88,7 @@ int main() {
 
         // Cube #2 Generation
         pipeline3d.PushMatrix();
-        pipeline3d.Transform3D(
+        pipeline3d.Transform(
             Engine::Vector3(0.08 * i, 0, -5),             // Move dynamically horizontally
             Engine::Vector3(1, 1, 0) * (3.14 * 0.025 * i), // Complex combined rotation
             Engine::Vector3(1, 0.5, 1)

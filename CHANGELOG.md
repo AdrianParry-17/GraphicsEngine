@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [1.1.0] - 2026-03-12
+
+### Added
+- **`Engine_WorldGraphics.h`**: New generic N-dimensional world graphics system (`WorldVertex<ColorT, D>`, `IWorldGraphics<ColorT, D>`, `MatrixWorldGraphics<ColorT, D>`, `PlaneClipWorldGraphics<ColorT, D>`, `ViewportTransformWorldGraphics<ColorT, D>`, etc.), replacing all prior hardcoded per-dimension duplicates.
+- **`Engine_Transform.h`**: Extracted transformation-related static helper methods into dedicated `Transform2D` and `Transform3D` utility classes.
+- **Generic Math Types**: `SquareMatrix<D>` and `Vector<D>` now support N-dimensional spaces; `Matrix2x2/3x3/4x4` and `Vector2/3/4` are retained as convenience typedefs.
+- **`IScalableInterpolator`**: New interpolator interface extending `IInterpolator` with a `Scale(const T&, double, T&)` method, used when perspective correction is needed.
+- **`ScalableInterpolator` / `FunctionScalableInterpolator`**: Concrete implementations of `IScalableInterpolator`.
+
+### Changed
+- **`Engine_2D/3D/4D.h`**: Now thin alias-only headers over the generic `Engine_WorldGraphics.h` types (e.g. `WorldVertex3D<ColorT>`, `IWorldGraphics3D<ColorT>`, `WorldPlane3D`).
+- **`IInterpolator`**: Reverted to only requiring `Linear` and `Triangle`; scaling responsibility moved to `IScalableInterpolator`.
+- **`Graphics3DPipeline`**: Now requires an `IScalableInterpolator` for color when perspective correction is enabled.
+- **Vertex API**: Vertex positions are now stored as a `Vector<D> position` public field. Access uses `position.x()`, `position.y()`, `position.z()` instead of the old direct member fields `.x`, `.y`, `.z`.
+- **Naming Convention**: World-space graphics classes renamed from `IGraphicsND`/`Vertex3D` style to `IWorldGraphics<ColorT, D>`/`WorldVertex<ColorT, D>` style to cleanly separate world-space from screen-space (`IGraphics`) concerns.
+- Examples, tests, and all pipeline headers updated throughout to reflect the new API.
+
+### Removed
+- `IVectorInterpolator`, `VectorInterpolator`, `FunctionVectorInterpolator` from `Engine_Interpolation.h`.
+- Hardcoded per-dimension vertex types `Vertex2D/3D/4D` and their `x`, `y`, `z`, `w` fields.
+- Hardcoded per-dimension graphics interfaces `IGraphics2D/3D/4D`, `PlaneClippedGraphics2D/3D/4D`, `MatrixGraphics2D/3D/4D`, etc.  
+- Transformation methods previously inlined on matrix types; now exclusively in `Engine_Transform.h`.
+
 ## [1.0.1] - 2026-03-03
 
 ### Added
