@@ -28,6 +28,9 @@ target_include_directories(04_DynamicTerrain PRIVATE include examples)
 add_executable(05_SolarSystem examples/05_SolarSystem.cpp src/Engine_Math.cpp)
 target_include_directories(05_SolarSystem PRIVATE include examples)
 
+add_executable(06_TexturePipeline3D examples/06_TexturePipeline3D.cpp src/Engine_Math.cpp)
+target_include_directories(06_TexturePipeline3D PRIVATE include examples)
+
 enable_testing()
 
 add_executable(GraphicsEngineTests

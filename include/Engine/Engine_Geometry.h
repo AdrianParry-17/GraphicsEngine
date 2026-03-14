@@ -228,8 +228,10 @@ namespace Engine {
         Rectangle TopLeftRectangle() const { return Rectangle(LeftSide(), TopSide(), std::abs(w), std::abs(h)); }
 
         /// @brief Returns true if point is inside rectangle.
-        bool IsContain(const Point& p) const {
-            return (p.x >= LeftSide() && p.x <= RightSide()) && (p.y >= TopSide() && p.y <= BottomSide());
+        bool IsContain(const Point& p) const { return IsContain(p.x, p.y); }
+        /// @brief Returns true if point is inside rectangle.
+        bool IsContain(int x, int y) const {
+            return (x >= LeftSide() && x <= RightSide()) && (y >= TopSide() && y <= BottomSide());
         }
         /// @brief Returns true if rectangle is fully contained in this rectangle.
         bool IsContain(const Rectangle& r) const {
