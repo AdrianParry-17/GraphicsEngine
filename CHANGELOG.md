@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.2.0] - 2026-03-14
+
+### Added
+- **Texture System**: Added `Engine_Texture.h` with `ITexture<ColorT>` and composable adapters including `ContextTexture`, `FunctionTexture`, `TextureWrapper`, `ViewportTexture`, `ClippedTexture`, `RepeatedTexture`, and `ConvertTexture`.
+- **Continuous Texture Sampling**: Added `Engine_Texture2D.h` with `ITexture2D<ColorT>`, `FunctionTexture2D`, `Texture2DWrapper`, `NativeTexture2D`, `ViewportTransformTexture2D`, and `NativeTextureAdaptMethod` for nearest-neighbor and bilinear sampling.
+- **Textured Rendering Payloads**: Added `Engine_TextureGraphics.h` with `TexturedColor<ColorT>`, `TexturedColorInterpolator`, `TexturedColorScalableInterpolator`, and `TextureSamplingGraphics` for UV-aware rendering through the existing 2D and 3D pipelines.
+- **New Examples**:
+  - `06_TexturePipeline3D`: Demonstrates a textured rotating cube rendered through `Graphics3DPipeline` with perspective correction.
+  - `07_TexturePipeline2D`: Demonstrates textured 2D geometry rendered through `Graphics2DPipeline`.
+
+### Changed
+- **README**: Updated feature overview, example list, and known limitations to document the new texturing workflow and current UV precision caveat.
+- **Example Coverage**: The project examples now include both 2D and 3D texture sampling scenarios using a repeated checkerboard pattern.
+
+### Known Limitations
+- **Texture UV Precision**: Texture sampling near integer or upper-bound UV edges can still exhibit minor artifacts caused by floating-point precision and boundary mapping behavior. This is currently acknowledged and intentionally left unresolved.
+
 ## [1.1.0] - 2026-03-12
 
 ### Added

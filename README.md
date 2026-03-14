@@ -20,6 +20,7 @@ This project provides an "open-box" implementation of a software rendering pipel
 The architecture is built with a focus on:
 - **Systems Design**: Clean abstractions, strictly modular layers, and entirely decoupled rendering payloads using C++ templates.
 - **Mathematics & Algorithms**: Custom, from-scratch implementations of fundamental 3D transformations, Barycentric interpolation, geometric clipping, and matrix algebra.
+- **Composable Texturing**: Reusable texture adapters, UV-aware payloads, and texture sampling layers that plug into the same generic 2D/3D rendering pipelines.
 - **Zero Dependencies**: Core mathematics and pipeline stages are crafted natively without relying on heavy external math or graphics libraries.
 
 ---
@@ -43,6 +44,13 @@ The pipeline features strict boundaries, allowing developers to test, modify, or
 - **Rasterization & Interpolation:** `RendererGraphics` constructs complex primitive meshes out of simple indexed vertex maps.
 - **World Graphics Layer:** A unified, N-dimensional `IWorldGraphics<ColorT, D>` abstraction covers vertex transformation, clipping, and viewport mapping generically. `Engine_2D/3D/4D.h` provide convenient dimension-specific aliases (`IWorldGraphics3D`, `WorldVertex3D`, etc.).
 - **High-Level Pipelines:** `Graphics2DPipeline` and `Graphics3DPipeline` coordinate matrix transform stacks (`PushMatrix`, `PopMatrix`), z-depth clipping, and full scene updates.
+
+### 4. Texturing Pipeline
+Texturing is implemented as another composable layer rather than as a hardcoded special case:
+- **Discrete Textures:** `ITexture<ColorT>` models integer-coordinate texture lookups and can be backed by contexts, functions, clipped regions, repeated regions, or converted payload types.
+- **Continuous UV Sampling:** `ITexture2D<ColorT>` and `NativeTexture2D<ColorT>` adapt integer textures into floating-point UV space using nearest-neighbor or bilinear filtering.
+- **Textured Payloads:** `TexturedColor<ColorT>` carries both the base color and UV coordinates, while `TexturedColorInterpolator` / `TexturedColorScalableInterpolator` preserve those attributes during interpolation.
+- **Rendering Hook:** `TextureSamplingGraphics` samples the active texture during `DrawPoint()` and falls back to the embedded color when texturing is disabled or sampling fails.
 
 ---
 
@@ -80,6 +88,8 @@ cd build
 ./03_CustomPipeline3D     # Exposes the manual, low-level pipeline component wiring
 ./04_DynamicTerrain       # Procedural rolling "wave/ocean" terrain
 ./05_SolarSystem          # Nested transformation matrices
+./06_TexturePipeline3D    # Textured rotating cube with checkerboard UV sampling
+./07_TexturePipeline2D    # Textured 2D quad rendered through the 2D pipeline
 ```
 
 ---
@@ -109,6 +119,7 @@ By prioritizing explicit architecture, modularity, and step-by-step readability 
 1. **Virtual Dispatch Overhead:** To maintain highly composable wrappers and an object-oriented design, rendering pipelines utilize virtual method resolution continuously at the pixel/fragment level.
 2. **Perspective-Correct Interpolation:** Perspective-correct rasterization requires a scalar scaling step on the color payload. This is now cleanly separated from general interpolation via a dedicated `IScalableInterpolator<ColorT>` interface. Callers who need perspective correction must provide this extended type; those who do not can continue using the simpler `IInterpolator<ColorT>`.
 3. **Generic API Verbosity:** The move from hardcoded per-dimension types to a generic `Vector<D>`-based system resolves dimension duplication entirely, but introduces slightly more verbose position access. Where the old API allowed `vertex.x`, `vertex.y`, `vertex.z`, the new API requires `vertex.position.x()`, `vertex.position.y()`, `vertex.position.z()`. Dimension-specific constructors and accessor helpers are provided to mitigate this.
+4. **Texture UV Floating-Point Precision:** The new texturing path can still show small sampling artifacts near UV boundaries or exact texel edges, especially when repeated textures and mapped ranges land very close to exclusive upper bounds. This is a known floating-point precision limitation in the current texture sampling path.
 
 ---
 
@@ -120,3 +131,4 @@ Key points of interest within the codebase:
 - [`include/Engine/Engine_Matrix.h`](include/Engine/Engine_Matrix.h) & [`src/Engine_Math.cpp`](src/Engine_Math.cpp) - *Core N-dimensional matrix math and projection model.*
 - [`include/Engine/Engine_Transform.h`](include/Engine/Engine_Transform.h) - *Static transformation helpers (translation, rotation, scale, projection) for 2D and 3D spaces.*
 - [`include/Engine/Engine_Interpolation.h`](include/Engine/Engine_Interpolation.h) - *The `IInterpolator` and `IScalableInterpolator` interfaces decoupling rasterization from rendering payloads.*
+- [`include/Engine/Engine_TextureGraphics.h`](include/Engine/Engine_TextureGraphics.h) - *Textured payload/interpolator utilities and the graphics wrapper that performs runtime texture sampling.*

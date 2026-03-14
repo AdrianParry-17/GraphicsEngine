@@ -5,42 +5,40 @@
 #include <cstdlib>
 #include <thread>
 
-struct TexturedColor { double uv_x, uv_y, color; };
-
-void RenderCube_pipe(Engine::Graphics3DPipeline<TexturedColor> &pipeline) {
+void RenderCube(Engine::Graphics3DPipeline<Engine::TexturedColor<double>>& pipeline) {
     // Helper function mapping 12 triangles forming a simple local cube at zero-point.
     
-    std::vector<Engine::WorldVertex3D<TexturedColor>> vertices = {
+    std::vector<Engine::WorldVertex3D<Engine::TexturedColor<double>>> vertices = {
         // Front face (Z = 1), Color: 9
-        Engine::WorldVertex3D<TexturedColor>({-1, -1,  1}, {0.0, 0.0, 9}),
-        Engine::WorldVertex3D<TexturedColor>({ 1, -1,  1}, {1.0, 0.0, 9}),
-        Engine::WorldVertex3D<TexturedColor>({ 1,  1,  1}, {1.0, 1.0, 9}),
-        Engine::WorldVertex3D<TexturedColor>({-1,  1,  1}, {0.0, 1.0, 9}),
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({-1, -1,  1}, {9, 0.0, 0.0}),
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({ 1, -1,  1}, {9, 1.0, 0.0}),
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({ 1,  1,  1}, {9, 1.0, 1.0}),
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({-1,  1,  1}, {9, 0.0, 1.0}),
         // Back face (Z = -1), Color: 4
-        Engine::WorldVertex3D<TexturedColor>({-1, -1, -1}, {0.0, 0.0, 4}),
-        Engine::WorldVertex3D<TexturedColor>({ 1, -1, -1}, {1.0, 0.0, 4}),
-        Engine::WorldVertex3D<TexturedColor>({ 1,  1, -1}, {1.0, 1.0, 4}),
-        Engine::WorldVertex3D<TexturedColor>({-1,  1, -1}, {0.0, 1.0, 4}),
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({-1, -1, -1}, {4, 0.0, 0.0}),
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({ 1, -1, -1}, {4, 1.0, 0.0}),
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({ 1,  1, -1}, {4, 1.0, 1.0}),
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({-1,  1, -1}, {4, 0.0, 1.0}),
         // Left face (X = -1), Color: 5
-        Engine::WorldVertex3D<TexturedColor>({-1, -1, -1}, {0.0, 0.0, 5}),
-        Engine::WorldVertex3D<TexturedColor>({-1, -1,  1}, {1.0, 0.0, 5}),
-        Engine::WorldVertex3D<TexturedColor>({-1,  1,  1}, {1.0, 1.0, 5}),
-        Engine::WorldVertex3D<TexturedColor>({-1,  1, -1}, {0.0, 1.0, 5}),
-        // Right face (X = 1), Color: 6
-        Engine::WorldVertex3D<TexturedColor>({ 1, -1, -1}, {0.0, 0.0, 3}),
-        Engine::WorldVertex3D<TexturedColor>({ 1, -1,  1}, {1.0, 0.0, 3}),
-        Engine::WorldVertex3D<TexturedColor>({ 1,  1,  1}, {1.0, 1.0, 3}),
-        Engine::WorldVertex3D<TexturedColor>({ 1,  1, -1}, {0.0, 1.0, 3}),
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({-1, -1, -1}, {5, 0.0, 0.0}),
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({-1, -1,  1}, {5, 1.0, 0.0}),
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({-1,  1,  1}, {5, 1.0, 1.0}),
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({-1,  1, -1}, {5, 0.0, 1.0}),
+        // Right face (X = 1), Color: 3
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({ 1, -1, -1}, {3, 0.0, 0.0}),
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({ 1, -1,  1}, {3, 1.0, 0.0}),
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({ 1,  1,  1}, {3, 1.0, 1.0}),
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({ 1,  1, -1}, {3, 0.0, 1.0}),
         // Top face (Y = 1), Color: 7
-        Engine::WorldVertex3D<TexturedColor>({-1,  1, -1}, {0.0, 0.0, 7}),
-        Engine::WorldVertex3D<TexturedColor>({ 1,  1, -1}, {1.0, 0.0, 7}),
-        Engine::WorldVertex3D<TexturedColor>({ 1,  1,  1}, {1.0, 1.0, 7}),
-        Engine::WorldVertex3D<TexturedColor>({-1,  1,  1}, {0.0, 1.0, 7}),
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({-1,  1, -1}, {7, 0.0, 0.0}),
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({ 1,  1, -1}, {7, 1.0, 0.0}),
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({ 1,  1,  1}, {7, 1.0, 1.0}),
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({-1,  1,  1}, {7, 0.0, 1.0}),
         // Bottom face (Y = -1), Color: 8
-        Engine::WorldVertex3D<TexturedColor>({-1, -1, -1}, {0.0, 0.0, 8}),
-        Engine::WorldVertex3D<TexturedColor>({ 1, -1, -1}, {1.0, 0.0, 8}),
-        Engine::WorldVertex3D<TexturedColor>({ 1, -1,  1}, {1.0, 1.0, 8}),
-        Engine::WorldVertex3D<TexturedColor>({-1, -1,  1}, {0.0, 1.0, 8})
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({-1, -1, -1}, {8, 0.0, 0.0}),
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({ 1, -1, -1}, {8, 1.0, 0.0}),
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({ 1, -1,  1}, {8, 1.0, 1.0}),
+        Engine::WorldVertex3D<Engine::TexturedColor<double>>({-1, -1,  1}, {8, 0.0, 1.0})
     };
 
     std::vector<int> indices = {
@@ -57,46 +55,38 @@ void RenderCube_pipe(Engine::Graphics3DPipeline<TexturedColor> &pipeline) {
 
 int main() {
     Engine::ScalableInterpolator<double> color_interpolator;
-    Engine::FunctionScalableInterpolator<TexturedColor> tex_color_interpolator(
-        [&](const TexturedColor& in, double scalar, TexturedColor& res) {
-            res.uv_x = in.uv_x * scalar;
-            res.uv_y = in.uv_y * scalar;
-            color_interpolator.Scale(in.color, scalar, res.color);
-        },
-        [&](const TexturedColor& a, const TexturedColor& b, double t, TexturedColor& res) {
-            res.uv_x = a.uv_x + (b.uv_x - a.uv_x) * t;
-            res.uv_y = a.uv_y + (b.uv_y - a.uv_y) * t;
-            color_interpolator.Linear(a.color, b.color, t, res.color);
-        },
-        [&](const TexturedColor& a, const TexturedColor& b, const TexturedColor& c, double wa, double wb, double wc, TexturedColor& res) {
-            res.uv_x = a.uv_x * wa + b.uv_x * wb + c.uv_x * wc;
-            res.uv_y = a.uv_y * wa + b.uv_y * wb + c.uv_y * wc;
-            color_interpolator.Triangle(a.color, b.color, c.color, wa, wb, wc, res.color);
-        }
-    );
+    Engine::TexturedColorScalableInterpolator<double> tex_color_interpolator(color_interpolator);
 
     // - Texture Initialize
-    //  + A infinite checker board pattern texture.
-    Engine::FunctionTexture<double> func_tex([](int x, int y, double& res) { res = ((x + y) % 2 == 0) ? 9 : 3; return true; });
-    Engine::NativeTexture2D<double> native_tex2d(func_tex, color_interpolator, Engine::NativeTextureAdaptMethod::NearestNeighbor);
+    //  + A simple 2x2 checker board pattern texture.
+    Engine::FunctionTexture<double> func_tex([](int x, int y, double& res) {
+        if (x < 0 || x > 1 || y < 0 || y > 1) return false;
+        res = ((x + y) % 2 == 0) ? 9 : 3;
+        return true;
+    });
+    //  + Making the texture repeated
+    Engine::RepeatedTexture<double> rep_tex(func_tex, Engine::Rectangle(0, 0, 2, 2));
+    //  + Adapting to 2D texture mapping, using Nearest Neighbor mapping algorithm
+    Engine::NativeTexture2D<double> native_tex2d(rep_tex, color_interpolator, Engine::NativeTextureAdaptMethod::NearestNeighbor);
+    //  + UV mapping (trimmed with NearZero to prevent hitting the exclusive upper bound 'b'):
+    //    - Input (0, 0) -> (1, 1)
+    //    - Output (0, 0) -> (2 - epsilon, 2 - epsilon)
     Engine::ViewportTransformTexture2D<double> viewport_tex2d(
-        native_tex2d, Engine::RangeMapper(0, 1, 0, 2), Engine::RangeMapper(0, 1, 0, 2)
+        native_tex2d, 
+        Engine::RangeMapper(0, 1, 0, 2), 
+        Engine::RangeMapper(0, 1, 0, 2)
     );
 
     // - Graphics Initialize
     TerminalBufferContext context(120, 30);
     Engine::ContextGraphics<double> context_g(context);
-    Engine::FunctionGraphics<TexturedColor> func_g([&](int x, int y, const TexturedColor& c) {
-        double color;
-        if (viewport_tex2d.GetColor(c.uv_x, c.uv_y, color))
-            return context_g.DrawPoint(x, y, color);
-        return context_g.DrawPoint(x, y, c.color);
-    });
-
+    //   + Add texture sampling layer
+    Engine::TextureSamplingGraphics<double> tex_sampling_g(context_g);
 
     // Setup 3D graphics pipeline inside bounding rect
-    Engine::Graphics3DPipeline<TexturedColor> pipeline3d(
-        func_g, tex_color_interpolator, Engine::Rectangle(0, 0, 120, 30));
+    Engine::Graphics3DPipeline<Engine::TexturedColor<double>> pipeline3d(
+        tex_sampling_g, tex_color_interpolator, Engine::Rectangle(0, 0, 120, 30)
+    );
 
     // Prepare global logic bindings
     const double _deg_to_rad = std::acos(-1) / 180.0;
@@ -112,24 +102,28 @@ int main() {
     for (int i = -100; i <= 100; ++i) {
         pipeline3d.ClearDepthBuffer();
         
-        // Cube #1 Generation
+        // Cube #1 Generation (no texture)
+        tex_sampling_g.SetTargetTexture(nullptr);
+        
         pipeline3d.PushMatrix();
         pipeline3d.Transform(
             Engine::Vector3(-2, 0, -8),
             Engine::Vector3(0, (5 * i) * _deg_to_rad, 0), // Rotate continuously on Y axis
             Engine::Vector3(1, 0.5, 1)                      // Scale Y to flat block shape
         );
-        RenderCube_pipe(pipeline3d);
+        RenderCube(pipeline3d);
         pipeline3d.PopMatrix();
 
-        // Cube #2 Generation
+        // Cube #2 Generation (with texture)
+        tex_sampling_g.SetTargetTexture(&viewport_tex2d);
+        
         pipeline3d.PushMatrix();
         pipeline3d.Transform(
             Engine::Vector3(0.08 * i, 0, -5),             // Move dynamically horizontally
             Engine::Vector3(1, 1, 0) * (3.14 * 0.025 * i), // Complex combined rotation
             Engine::Vector3(1, 0.5, 1)
         );
-        RenderCube_pipe(pipeline3d);
+        RenderCube(pipeline3d);
         pipeline3d.PopMatrix();
 
         // Flush text display sequence to user

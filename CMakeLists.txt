@@ -31,6 +31,9 @@ target_include_directories(05_SolarSystem PRIVATE include examples)
 add_executable(06_TexturePipeline3D examples/06_TexturePipeline3D.cpp src/Engine_Math.cpp)
 target_include_directories(06_TexturePipeline3D PRIVATE include examples)
 
+add_executable(07_TexturePipeline2D examples/07_TexturePipeline2D.cpp src/Engine_Math.cpp)
+target_include_directories(07_TexturePipeline2D PRIVATE include examples)
+
 enable_testing()
 
 add_executable(GraphicsEngineTests
@@ -39,6 +42,7 @@ add_executable(GraphicsEngineTests
 	tests/MathMatrixTests.cpp
 	tests/WorldGraphicsTests.cpp
 	tests/PipelineTests.cpp
+	tests/TextureTests.cpp
 	src/Engine_Math.cpp
 )
 target_include_directories(GraphicsEngineTests PRIVATE include tests)

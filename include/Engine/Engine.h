@@ -16,6 +16,7 @@
 #include "Engine_Renderer.h"
 #include "Engine_Texture.h"
 #include "Engine_Texture2D.h"
+#include "Engine_TextureGraphics.h"
 #include "Engine_Transform.h"
 #include "Engine_Vector.h"
 #include "Engine_WorldGraphics.h"
