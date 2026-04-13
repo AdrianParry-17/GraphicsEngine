@@ -15,42 +15,100 @@
 
 ## 🎯 Overview
 
-This project provides an "open-box" implementation of a software rendering pipeline. While traditional graphics APIs (OpenGL/Vulkan/DirectX) hide the rasterization pipeline behind GPU hardware, this engine explicitly exposes the entire rendering loop on the CPU side. 
+This project provides an "open-box" implementation of a software rendering pipeline. While traditional graphics APIs (OpenGL/Vulkan/DirectX) hide most rasterization stages behind dedicated GPU hardware, this engine explicitly exposes the full rendering loop on the CPU side.
+
+The goal is educational clarity **without sacrificing architectural rigor**: each stage is modular, testable, and replaceable, while still composing into a full 2D/3D renderer.
 
 The architecture is built with a focus on:
-- **Systems Design**: Clean abstractions, strictly modular layers, and entirely decoupled rendering payloads using C++ templates.
-- **Mathematics & Algorithms**: Custom, from-scratch implementations of fundamental 3D transformations, Barycentric interpolation, geometric clipping, and matrix algebra.
-- **Composable Texturing**: Reusable texture adapters, UV-aware payloads, and texture sampling layers that plug into the same generic 2D/3D rendering pipelines.
-- **Zero Dependencies**: Core mathematics and pipeline stages are crafted natively without relying on heavy external math or graphics libraries.
+- **Systems Design**: Clean abstractions, strictly layered components, and decoupled rendering payloads via templates.
+- **Mathematics & Algorithms**: Custom implementations of transformations, clipping, barycentric interpolation, and matrix algebra.
+- **Composable Texturing**: Reusable adapters and UV-aware payloads that integrate into the same core pipeline.
+- **Zero Dependencies**: Core math and render stages are implemented natively (no heavyweight external graphics/maths libs).
+
+---
+
+## 🧭 Design Goals
+
+1. **Explain the graphics pipeline explicitly**
+   - Keep projection, clipping, rasterization, interpolation, and shading concerns visible and separable.
+2. **Support payload-agnostic rendering**
+   - Allow custom render payloads beyond simple RGB color.
+3. **Prioritize composability over hardcoded specialization**
+   - Use interfaces/wrappers so stages can be mixed, replaced, or tested in isolation.
+4. **Retain practical performance characteristics for a CPU renderer**
+   - Minimize accidental complexity while accepting intentional abstraction overhead.
 
 ---
 
 ## 🚀 Core Architecture
 
 ### 1. Generic Payload Pipeline
-The rendering engine mathematically processes generic data—whether it represents RGB colors, depth buffers, or custom vertex attributes. It achieves this by decoupling rendering logic from specific types (`ColorT`) via C++ templates. 
-- Custom types can be rasterized simply by defining abstract behaviors in an `IInterpolator<ColorT>` interface.
-- Core algorithms (lines, point projection, barycentric fills) remain payload-agnostic.
+The renderer mathematically processes generic payload data (`ColorT`) rather than assuming a fixed pixel format.
+
+- Custom payloads integrate through `IInterpolator<ColorT>`.
+- Core primitives (lines, triangles, point projection) stay payload-agnostic.
+- Perspective-correct workflows can opt into `IScalableInterpolator<ColorT>` for scaling-aware interpolation.
+
+**Why this matters:** the same rasterization math works for plain colors, depth-aware payloads, or UV-carrying textured payload structs.
 
 ### 2. Custom Mathematical Foundation
-To remain entirely self-contained, all linear algebra and coordinate systems are implemented from the ground up:
-- Generic N-dimensional `Vector<D>` and `SquareMatrix<D>` types; `Vector2/3/4` and `Matrix2x2/3x3/4x4` are convenience aliases.
-- `Quaternion` mathematics for handling gimbal-lock-free 3D spatial rotations.
-- Viewport and projection matrix construction (Orthographic, Perspective, Frustum) via `Transform2D` / `Transform3D` utility classes.
+To remain self-contained, linear algebra and coordinate utilities are implemented from scratch.
+
+- Generic `Vector<D>` and `SquareMatrix<D>` with common aliases (`Vector2/3/4`, `Matrix2x2/3x3/4x4`).
+- `Quaternion` support for robust 3D rotation composition.
+- Transform helpers for translation/rotation/scaling plus orthographic/perspective/frustum projections.
+
+**Why this matters:** behavior is deterministic, inspectable, and not constrained by third-party APIs.
 
 ### 3. Layered Composable Pipeline
-The pipeline features strict boundaries, allowing developers to test, modify, or swap out individual stages without breaking the rendering loop:
-- **Pixel Layer:** Abstract `IDrawingContext<ColorT>` interfaces bridged by protective wrappers (`ClippedGraphics`, `ViewportGraphics`).
-- **Rasterization & Interpolation:** `RendererGraphics` constructs complex primitive meshes out of simple indexed vertex maps.
-- **World Graphics Layer:** A unified, N-dimensional `IWorldGraphics<ColorT, D>` abstraction covers vertex transformation, clipping, and viewport mapping generically. `Engine_2D/3D/4D.h` provide convenient dimension-specific aliases (`IWorldGraphics3D`, `WorldVertex3D`, etc.).
-- **High-Level Pipelines:** `Graphics2DPipeline` and `Graphics3DPipeline` coordinate matrix transform stacks (`PushMatrix`, `PopMatrix`), z-depth clipping, and full scene updates.
+The rendering stack is split into explicit layers with strict boundaries:
+
+- **Pixel Layer**
+  - `IDrawingContext<ColorT>` defines the draw surface contract.
+  - Wrappers like `ClippedGraphics` and `ViewportGraphics` enforce safe draw regions.
+
+- **Rasterization & Interpolation Layer**
+  - `RendererGraphics` handles primitive assembly/rasterization.
+  - Interpolator interfaces decouple geometry traversal from payload blending.
+
+- **World Graphics Layer**
+  - `IWorldGraphics<ColorT, D>` applies transforms, clipping, and viewport mapping in a dimension-generic way.
+  - Convenience aliases are provided by `Engine_2D.h`, `Engine_3D.h`, and `Engine_4D.h`.
+
+- **High-Level Pipeline Layer**
+  - `Graphics2DPipeline` and `Graphics3DPipeline` orchestrate frame lifecycle and transform stack operations (`PushMatrix`, `PopMatrix`).
 
 ### 4. Texturing Pipeline
-Texturing is implemented as another composable layer rather than as a hardcoded special case:
-- **Discrete Textures:** `ITexture<ColorT>` models integer-coordinate texture lookups and can be backed by contexts, functions, clipped regions, repeated regions, or converted payload types.
-- **Continuous UV Sampling:** `ITexture2D<ColorT>` and `NativeTexture2D<ColorT>` adapt integer textures into floating-point UV space using nearest-neighbor or bilinear filtering.
-- **Textured Payloads:** `TexturedColor<ColorT>` carries both the base color and UV coordinates, while `TexturedColorInterpolator` / `TexturedColorScalableInterpolator` preserve those attributes during interpolation.
-- **Rendering Hook:** `TextureSamplingGraphics` samples the active texture during `DrawPoint()` and falls back to the embedded color when texturing is disabled or sampling fails.
+Texturing is additive and composable rather than hardwired into core rasterization.
+
+- `ITexture<ColorT>` models discrete texel lookup.
+- `ITexture2D<ColorT>` / `NativeTexture2D<ColorT>` adapt discrete textures into UV sampling space.
+- `TexturedColor<ColorT>` carries base payload + UV attributes.
+- `TextureSamplingGraphics` samples active textures during point emission and gracefully falls back to embedded payload color.
+
+---
+
+## 🔁 Frame Pipeline Walkthrough
+
+A typical 3D frame flows through the following stages:
+
+1. **Scene setup**
+   - Update camera + object transforms.
+   - Push world/model matrices to the pipeline stack.
+2. **Vertex transform**
+   - Convert model-space vertices into projected clip/screen-space representations.
+3. **Geometric clipping**
+   - Reject or trim primitives against configured clipping volumes.
+4. **Triangle rasterization**
+   - Iterate covered pixels using barycentric evaluation.
+5. **Attribute interpolation**
+   - Blend payload attributes (color, UV, custom data) per fragment.
+6. **Optional texture sampling**
+   - Resolve final payload from UVs when texturing wrappers are active.
+7. **Depth/order handling + draw output**
+   - Submit to drawing context (terminal buffer in examples).
+
+This explicit flow is intentionally readable and debuggable, making it suitable for learning or for building custom software rendering experiments.
 
 ---
 
@@ -59,9 +117,9 @@ Texturing is implemented as another composable layer rather than as a hardcoded 
 ### Requirements
 - **CMake** >= 3.16
 - **C++11** compatible compiler (GCC / Clang / MSVC)
-- *Zero external dependencies required.*
+- No external runtime dependencies
 
-### Instructions
+### Build
 ```bash
 # 1. Clone the repository
 git clone https://github.com/AdrianParry-17/GraphicsEngine.git
@@ -70,65 +128,117 @@ cd GraphicsEngine
 # 2. Configure with CMake
 cmake -S . -B build
 
-# 3. Build the project
+# 3. Build all targets
 cmake --build build
+```
+
+### Optional: build a specific config (multi-config generators)
+```bash
+cmake --build build --config Release
 ```
 
 ---
 
 ## 🎮 Running The Examples
 
-The examples output directly to the terminal using ASCII/variable-intensity block characters via a custom `TerminalBufferContext`. This keeps the test footprint extremely lightweight. (Resize your terminal window and decrease the font size for the best viewing experience!)
+Examples render to the terminal through a custom `TerminalBufferContext` using ASCII / block-intensity characters.
+
+> Tip: maximize terminal size and reduce font scale for smoother perceived resolution.
 
 ```bash
 cd build
 
-./01_Pipeline2D           # Basic 2D shapes and interpolations
-./02_Pipeline3D           # Spinning 3D Cubes showcasing perspective projections
-./03_CustomPipeline3D     # Exposes the manual, low-level pipeline component wiring
-./04_DynamicTerrain       # Procedural rolling "wave/ocean" terrain
-./05_SolarSystem          # Nested transformation matrices
-./06_TexturePipeline3D    # Textured rotating cube with checkerboard UV sampling
-./07_TexturePipeline2D    # Textured 2D quad rendered through the 2D pipeline
+./01_Pipeline2D           # Basic 2D primitives and interpolation
+./02_Pipeline3D           # Rotating 3D cubes with perspective projection
+./03_CustomPipeline3D     # Manual low-level pipeline composition
+./04_DynamicTerrain       # Procedural rolling terrain/wave surface
+./05_SolarSystem          # Hierarchical transforms (parent-child matrix stack)
+./06_TexturePipeline3D    # UV texturing on a rotating cube
+./07_TexturePipeline2D    # Textured quad through the 2D path
 ```
 
 ---
 
 ## 🧪 Testing
 
-The engine's architecture allows visual rendering steps to be decoupled from mathematical logic. A dedicated internal test harness ensures pipeline stability and regression safety.
+The repository includes an internal test harness that validates mathematical behavior and core pipeline invariants.
 
 ```bash
-# Build the test harness
+# Build tests
 cmake --build build --target GraphicsEngineTests
 
-# Run the test suite
+# Run tests
 ctest --test-dir build --output-on-failure
 ```
 
-Test coverage spans:
-- Linear algebra, matrix projections, and Quaternion evaluations.
-- Pipeline state checks and depth buffer sorting stability.
-- Internal rasterization boundaries and geometric clipping rules.
+Coverage includes:
+- Vector/matrix/quaternion correctness
+- Projection + transform consistency
+- Rasterization and clipping boundary behavior
+- Pipeline state progression and depth ordering stability
+
+---
+
+## 🧩 Extending the Engine
+
+### Add a custom payload type
+1. Define a payload struct (e.g., color + extra attributes).
+2. Implement `IInterpolator<YourPayload>`.
+3. If perspective-correct scaling is required, also implement `IScalableInterpolator<YourPayload>`.
+4. Route rendering through existing pipeline/wrapper layers.
+
+### Add a custom drawing backend
+1. Implement `IDrawingContext<ColorT>`.
+2. Optionally wrap with clipping/viewport decorators.
+3. Reuse the same world/rasterization pipeline unchanged.
+
+### Add a custom texture source
+1. Implement or adapt to `ITexture<ColorT>`.
+2. Wrap with `ITexture2D<ColorT>` or `NativeTexture2D<ColorT>` for UV sampling.
+3. Use `TextureSamplingGraphics` to bind texturing into draw output.
 
 ---
 
 ## 📉 Known Limitations & Trade-offs
 
-By prioritizing explicit architecture, modularity, and step-by-step readability over pure graphics throughput, the implementation makes a few deliberate trade-offs:
-1. **Virtual Dispatch Overhead:** To maintain highly composable wrappers and an object-oriented design, rendering pipelines utilize virtual method resolution continuously at the pixel/fragment level.
-2. **Perspective-Correct Interpolation:** Perspective-correct rasterization requires a scalar scaling step on the color payload. This is now cleanly separated from general interpolation via a dedicated `IScalableInterpolator<ColorT>` interface. Callers who need perspective correction must provide this extended type; those who do not can continue using the simpler `IInterpolator<ColorT>`.
-3. **Generic API Verbosity:** The move from hardcoded per-dimension types to a generic `Vector<D>`-based system resolves dimension duplication entirely, but introduces slightly more verbose position access. Where the old API allowed `vertex.x`, `vertex.y`, `vertex.z`, the new API requires `vertex.position.x()`, `vertex.position.y()`, `vertex.position.z()`. Dimension-specific constructors and accessor helpers are provided to mitigate this.
-4. **Texture UV Floating-Point Precision:** The new texturing path can still show small sampling artifacts near UV boundaries or exact texel edges, especially when repeated textures and mapped ranges land very close to exclusive upper bounds. This is a known floating-point precision limitation in the current texture sampling path.
+By prioritizing explicit architecture and readability over raw throughput, the engine intentionally accepts several trade-offs:
+
+1. **Virtual Dispatch Overhead**
+   - Composability relies on interfaces/wrappers, which introduces per-fragment dynamic dispatch costs.
+2. **Perspective-Correct Interpolation Contract**
+   - Perspective correction requires scalable interpolation semantics via `IScalableInterpolator<ColorT>`.
+3. **Generic API Verbosity**
+   - Generic `Vector<D>` design removes duplication but can be more verbose than dimension-specialized field layouts.
+4. **Texture UV Precision Edges**
+   - Minor sampling artifacts may appear at UV boundaries due to floating-point edge conditions.
 
 ---
 
 ## 📁 Repository Map
 
-Key points of interest within the codebase:
-- [`include/Engine/Engine_Graphics3DPipeline.h`](include/Engine/Engine_Graphics3DPipeline.h) - *The highest-level abstract representation of the 3D projection rendering loop.*
-- [`include/Engine/Engine_WorldGraphics.h`](include/Engine/Engine_WorldGraphics.h) - *The generic N-dimensional world graphics system; the core of the dimension-agnostic pipeline architecture.*
-- [`include/Engine/Engine_Matrix.h`](include/Engine/Engine_Matrix.h) & [`src/Engine_Math.cpp`](src/Engine_Math.cpp) - *Core N-dimensional matrix math and projection model.*
-- [`include/Engine/Engine_Transform.h`](include/Engine/Engine_Transform.h) - *Static transformation helpers (translation, rotation, scale, projection) for 2D and 3D spaces.*
-- [`include/Engine/Engine_Interpolation.h`](include/Engine/Engine_Interpolation.h) - *The `IInterpolator` and `IScalableInterpolator` interfaces decoupling rasterization from rendering payloads.*
-- [`include/Engine/Engine_TextureGraphics.h`](include/Engine/Engine_TextureGraphics.h) - *Textured payload/interpolator utilities and the graphics wrapper that performs runtime texture sampling.*
+Key entry points for understanding the codebase:
+
+- [`include/Engine/Engine_Graphics3DPipeline.h`](include/Engine/Engine_Graphics3DPipeline.h)
+  High-level 3D rendering loop orchestration.
+- [`include/Engine/Engine_WorldGraphics.h`](include/Engine/Engine_WorldGraphics.h)
+  Dimension-agnostic world graphics abstraction (`IWorldGraphics<ColorT, D>`).
+- [`include/Engine/Engine_Matrix.h`](include/Engine/Engine_Matrix.h) and [`src/Engine_Math.cpp`](src/Engine_Math.cpp)
+  Core matrix/math implementation.
+- [`include/Engine/Engine_Transform.h`](include/Engine/Engine_Transform.h)
+  Transform and projection helpers.
+- [`include/Engine/Engine_Interpolation.h`](include/Engine/Engine_Interpolation.h)
+  Interpolation contracts for payload-agnostic rasterization.
+- [`include/Engine/Engine_TextureGraphics.h`](include/Engine/Engine_TextureGraphics.h)
+  Texture payload types, interpolators, and sampling wrappers.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome, especially around:
+- Additional sample scenes
+- Profiling/performance instrumentation
+- New drawing contexts (image output, GUI windows, etc.)
+- Expanded test coverage and edge-case validation
+
+If you are experimenting with new pipeline stages, prefer adding them as wrappers/adapters so they remain composable with existing architecture.
