@@ -5,10 +5,59 @@
 #include "Engine_Interpolation.h"
 #include "Engine_Constant.h"
 
+#include <algorithm>
 #include <cmath>
 #include <functional>
 
 namespace Engine {
+    /**
+     * @brief Defines how texture coordinates outside a source area are handled.
+     */
+    enum class EdgeHandlingMode {
+        /** @brief Clamp coordinates to the nearest valid edge texel. */
+        Clamp = 0,
+        /** @brief Wrap coordinates around the source area. */
+        Repeat = 1,
+        /** @brief Reject coordinates outside the source area. */
+        Reject = 2
+    };
+
+    /**
+     * @brief Shared coordinate handling helpers for texture edge policies.
+     */
+    class TextureEdgeHandling final {
+    public:
+        /**
+         * @brief Applies an edge handling mode to one integer texture coordinate.
+         * @param value Input coordinate.
+         * @param start First coordinate in the source range.
+         * @param size Number of valid coordinates in the source range.
+         * @param mode Edge handling mode.
+         * @param result Output coordinate after edge handling.
+         * @return @c true if the coordinate is accepted.
+         */
+        static bool Apply(int value, int start, int size, EdgeHandlingMode mode, int& result) {
+            if (size <= 0)
+                return false;
+
+            switch (mode) {
+            case EdgeHandlingMode::Clamp:
+                result = std::max(start, std::min(start + size - 1, value));
+                return true;
+            case EdgeHandlingMode::Repeat:
+                result = start + ((value - start) % size + size) % size;
+                return true;
+            case EdgeHandlingMode::Reject:
+                if (value < start || value >= start + size)
+                    return false;
+                result = value;
+                return true;
+            default:
+                return false;
+            }
+        }
+    };
+
     /**
      * @brief Interface for discrete integer-coordinate texture sampling.
      * @tparam ColorT Texture texel payload type.
@@ -170,7 +219,7 @@ namespace Engine {
         bool GetColor(int x, int y, ColorT& result) override  {
             if (x < 0 || x >= viewport.Width() || y < 0 || y >= viewport.Height())
                 return false;
-                return TextureWrapper<ColorT>::GetColor(x + viewport.LeftSide(), y + viewport.TopSide(), result);
+            return TextureWrapper<ColorT>::GetColor(x + viewport.LeftSide(), y + viewport.TopSide(), result);
         }
     };
 
@@ -250,8 +299,13 @@ namespace Engine {
         bool GetColor(int x, int y, ColorT& result) override {
             if (src_area.IsEmptyArea())
                 return false;
-            int src_x = src_area.LeftSide() + ((x - src_area.LeftSide()) % src_area.Width() + src_area.Width()) % src_area.Width();
-            int src_y = src_area.TopSide() + ((y - src_area.TopSide()) % src_area.Height() + src_area.Height()) % src_area.Height();
+
+            int src_x = 0, src_y = 0;
+            if (!TextureEdgeHandling::Apply(x, src_area.LeftSide(), src_area.Width(), EdgeHandlingMode::Repeat, src_x))
+                return false;
+            if (!TextureEdgeHandling::Apply(y, src_area.TopSide(), src_area.Height(), EdgeHandlingMode::Repeat, src_y))
+                return false;
+
             return TextureWrapper<ColorT>::GetColor(src_x, src_y, result);
         }
     };

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Engine_WorldGraphics.h"
+#include "Engine_Mesh.h"
 #include "Engine_Renderer.h"
 
 namespace Engine {
@@ -9,6 +10,11 @@ namespace Engine {
      * @tparam ColorT The color type.
      */
     template <typename ColorT> using WorldVertex2D = WorldVertex<ColorT, 2>;
+    /**
+     * @brief Alias for a 2D indexed triangle mesh.
+     * @tparam ColorT The vertex payload type.
+     */
+    template <typename ColorT> using Mesh2D = Mesh<ColorT, 2>;
 
     /**
      * @brief Alias for the 2D world graphics interface.

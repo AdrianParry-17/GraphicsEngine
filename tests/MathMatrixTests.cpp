@@ -1,12 +1,35 @@
 #include "TestHarness.h"
 #include "TestSupport.h"
 
+#include <type_traits>
+
 TEST_CASE(Math_QuaternionIdentityRotation) {
     Engine::Quaternion q = Engine::Quaternion::CreateRotation(0.0, 0.0, 0.0);
     EXPECT_NEAR(1.0, q.a, 1e-12);
     EXPECT_NEAR(0.0, q.b, 1e-12);
     EXPECT_NEAR(0.0, q.c, 1e-12);
     EXPECT_NEAR(0.0, q.d, 1e-12);
+}
+
+TEST_CASE(Math_VectorCrossDimensionComparisonTreatsMissingComponentsAsZero) {
+    static_assert(std::is_same<bool, decltype(Engine::Vector2() == Engine::Vector3())>::value,
+        "Cross-dimension vector comparison must return bool");
+    static_assert(std::is_same<bool, decltype(Engine::Vector2().IsIdentical(Engine::Vector3()))>::value,
+        "Cross-dimension vector identity check must return bool");
+
+    const Engine::Vector2 xy(1.0, 2.0);
+    const Engine::Vector3 xyz_zero(1.0, 2.0, 0.0);
+    const Engine::Vector3 xyz_nonzero(1.0, 2.0, 3.0);
+    const Engine::Vector3 xyz_near_zero(1.0 + 1e-10, 2.0, 1e-10);
+
+    EXPECT_TRUE(xy == xyz_zero);
+    EXPECT_TRUE(xyz_zero == xy);
+    EXPECT_TRUE(xy != xyz_nonzero);
+    EXPECT_TRUE(xyz_nonzero != xy);
+
+    EXPECT_TRUE(xy.IsIdentical(xyz_near_zero));
+    EXPECT_TRUE(!xy.IsIdentical(xyz_nonzero));
+    EXPECT_TRUE(!xyz_nonzero.IsIdentical(xy));
 }
 
 TEST_CASE(Math_Matrix4x4Transformation3DComposition) {

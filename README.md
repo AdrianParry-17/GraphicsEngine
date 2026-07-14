@@ -20,6 +20,7 @@ This project provides an "open-box" implementation of a software rendering pipel
 The architecture is built with a focus on:
 - **Systems Design**: Clean abstractions, strictly modular layers, and entirely decoupled rendering payloads using C++ templates.
 - **Mathematics & Algorithms**: Custom, from-scratch implementations of fundamental 3D transformations, Barycentric interpolation, geometric clipping, and matrix algebra.
+- **Reusable Mesh Data**: Generic indexed meshes and built-in 2D/3D primitive generators integrate with the same payload-independent rendering path.
 - **Composable Texturing**: Reusable texture adapters, UV-aware payloads, and texture sampling layers that plug into the same generic 2D/3D rendering pipelines.
 - **Zero Dependencies**: Core mathematics and pipeline stages are crafted natively without relying on heavy external math or graphics libraries.
 
@@ -41,14 +42,23 @@ To remain entirely self-contained, all linear algebra and coordinate systems are
 ### 3. Layered Composable Pipeline
 The pipeline features strict boundaries, allowing developers to test, modify, or swap out individual stages without breaking the rendering loop:
 - **Pixel Layer:** Abstract `IDrawingContext<ColorT>` interfaces bridged by protective wrappers (`ClippedGraphics`, `ViewportGraphics`).
-- **Rasterization & Interpolation:** `RendererGraphics` constructs complex primitive meshes out of simple indexed vertex maps.
+- **Rasterization & Interpolation:** `RendererGraphics` rasterizes points, lines, and triangles while interpolating generic vertex payloads.
 - **World Graphics Layer:** A unified, N-dimensional `IWorldGraphics<ColorT, D>` abstraction covers vertex transformation, clipping, and viewport mapping generically. `Engine_2D/3D/4D.h` provide convenient dimension-specific aliases (`IWorldGraphics3D`, `WorldVertex3D`, etc.).
 - **High-Level Pipelines:** `Graphics2DPipeline` and `Graphics3DPipeline` coordinate matrix transform stacks (`PushMatrix`, `PopMatrix`), z-depth clipping, and full scene updates.
 
-### 4. Texturing Pipeline
+### 4. Mesh Data
+`Mesh<ColorT, D>` is a reusable vertex-and-index container that works with the existing generic payload pipeline. `MeshPrimitive` provides common 2D and 3D shapes, and each generator supports both a convenient return-by-value form and an output-parameter form for reusing a mesh.
+
+```cpp
+Engine::Mesh3D<double> cube = Engine::MeshPrimitive::GenerateCube3D(1.0);
+pipeline.RenderMesh(cube);
+```
+
+### 5. Texturing Pipeline
 Texturing is implemented as another composable layer rather than as a hardcoded special case:
 - **Discrete Textures:** `ITexture<ColorT>` models integer-coordinate texture lookups and can be backed by contexts, functions, clipped regions, repeated regions, or converted payload types.
 - **Continuous UV Sampling:** `ITexture2D<ColorT>` and `NativeTexture2D<ColorT>` adapt integer textures into floating-point UV space using nearest-neighbor or bilinear filtering.
+- **Texture Edge Handling:** `NativeTexture2D<ColorT>` can use an explicit source rectangle with `EdgeHandlingMode::Clamp`, `Repeat`, or `Reject` so UV edge samples have defined behavior.
 - **Textured Payloads:** `TexturedColor<ColorT>` carries both the base color and UV coordinates, while `TexturedColorInterpolator` / `TexturedColorScalableInterpolator` preserve those attributes during interpolation.
 - **Rendering Hook:** `TextureSamplingGraphics` samples the active texture during `DrawPoint()` and falls back to the embedded color when texturing is disabled or sampling fails.
 
@@ -110,6 +120,18 @@ Test coverage spans:
 - Linear algebra, matrix projections, and Quaternion evaluations.
 - Pipeline state checks and depth buffer sorting stability.
 - Internal rasterization boundaries and geometric clipping rules.
+- Texture sampling, source-area edge policies, and cross-dimension vector comparisons.
+
+Mesh primitives also have standalone single-frame terminal render checks:
+
+```bash
+cmake --build build --target MeshRenderTest AdditionalMeshesRenderTest
+
+./build/MeshRenderTest
+./build/AdditionalMeshesRenderTest
+```
+
+`MeshRenderTest` renders a cube. `AdditionalMeshesRenderTest` renders the tetrahedron, octahedron, cylinder, cone, and sphere together for visual inspection.
 
 ---
 
@@ -119,7 +141,7 @@ By prioritizing explicit architecture, modularity, and step-by-step readability 
 1. **Virtual Dispatch Overhead:** To maintain highly composable wrappers and an object-oriented design, rendering pipelines utilize virtual method resolution continuously at the pixel/fragment level.
 2. **Perspective-Correct Interpolation:** Perspective-correct rasterization requires a scalar scaling step on the color payload. This is now cleanly separated from general interpolation via a dedicated `IScalableInterpolator<ColorT>` interface. Callers who need perspective correction must provide this extended type; those who do not can continue using the simpler `IInterpolator<ColorT>`.
 3. **Generic API Verbosity:** The move from hardcoded per-dimension types to a generic `Vector<D>`-based system resolves dimension duplication entirely, but introduces slightly more verbose position access. Where the old API allowed `vertex.x`, `vertex.y`, `vertex.z`, the new API requires `vertex.position.x()`, `vertex.position.y()`, `vertex.position.z()`. Dimension-specific constructors and accessor helpers are provided to mitigate this.
-4. **Texture UV Floating-Point Precision:** The new texturing path can still show small sampling artifacts near UV boundaries or exact texel edges, especially when repeated textures and mapped ranges land very close to exclusive upper bounds. This is a known floating-point precision limitation in the current texture sampling path.
+4. **Explicit Texture Source Bounds:** The generic `ITexture<ColorT>` contract intentionally has no width/height requirement. `NativeTexture2D<ColorT>` applies `Clamp` / `Repeat` / `Reject` edge handling only when configured with a source rectangle; unbounded texture callbacks keep their direct sampling behavior.
 
 ---
 
@@ -128,6 +150,8 @@ By prioritizing explicit architecture, modularity, and step-by-step readability 
 Key points of interest within the codebase:
 - [`include/Engine/Engine_Graphics3DPipeline.h`](include/Engine/Engine_Graphics3DPipeline.h) - *The highest-level abstract representation of the 3D projection rendering loop.*
 - [`include/Engine/Engine_WorldGraphics.h`](include/Engine/Engine_WorldGraphics.h) - *The generic N-dimensional world graphics system; the core of the dimension-agnostic pipeline architecture.*
+- [`include/Engine/Engine_Mesh.h`](include/Engine/Engine_Mesh.h) - *The generic indexed triangle mesh data type and `RenderMesh` integration.*
+- [`include/Engine/Engine_MeshPrimitive.h`](include/Engine/Engine_MeshPrimitive.h) - *Built-in 2D and 3D primitive mesh generators.*
 - [`include/Engine/Engine_Matrix.h`](include/Engine/Engine_Matrix.h) & [`src/Engine_Math.cpp`](src/Engine_Math.cpp) - *Core N-dimensional matrix math and projection model.*
 - [`include/Engine/Engine_Transform.h`](include/Engine/Engine_Transform.h) - *Static transformation helpers (translation, rotation, scale, projection) for 2D and 3D spaces.*
 - [`include/Engine/Engine_Interpolation.h`](include/Engine/Engine_Interpolation.h) - *The `IInterpolator` and `IScalableInterpolator` interfaces decoupling rasterization from rendering payloads.*

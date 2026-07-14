@@ -11,6 +11,8 @@
 #include "Engine_Graphics3DPipeline.h"
 #include "Engine_Interpolation.h"
 #include "Engine_Matrix.h"
+#include "Engine_Mesh.h"
+#include "Engine_MeshPrimitive.h"
 #include "Engine_Quaternion.h"
 #include "Engine_Range.h"
 #include "Engine_Renderer.h"

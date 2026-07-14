@@ -7,7 +7,7 @@
 
 void RenderCube(Engine::Graphics3DPipeline<Engine::TexturedColor<double>>& pipeline) {
     // Helper function mapping 12 triangles forming a simple local cube at zero-point.
-    
+
     std::vector<Engine::WorldVertex3D<Engine::TexturedColor<double>>> vertices = {
         // Front face (Z = 1), Color: 9
         Engine::WorldVertex3D<Engine::TexturedColor<double>>({-1, -1,  1}, {9, 0.0, 0.0}),
@@ -72,8 +72,8 @@ int main() {
     //    - Input (0, 0) -> (1, 1)
     //    - Output (0, 0) -> (2 - epsilon, 2 - epsilon)
     Engine::ViewportTransformTexture2D<double> viewport_tex2d(
-        native_tex2d, 
-        Engine::RangeMapper(0, 1, 0, 2), 
+        native_tex2d,
+        Engine::RangeMapper(0, 1, 0, 2),
         Engine::RangeMapper(0, 1, 0, 2)
     );
 
@@ -90,9 +90,9 @@ int main() {
 
     // Prepare global logic bindings
     const double _deg_to_rad = std::acos(-1) / 180.0;
-    
+
     pipeline3d.EnablePerspectiveCorrection();
-    
+
     // Define viewpoint base metrics
     pipeline3d.LoadIdentity();
     pipeline3d.Perspective(45 * _deg_to_rad, 120.0 / 30.0, 0.01, 1000);
@@ -101,10 +101,10 @@ int main() {
     // Main interaction simulation
     for (int i = -100; i <= 100; ++i) {
         pipeline3d.ClearDepthBuffer();
-        
+
         // Cube #1 Generation (no texture)
         tex_sampling_g.SetTargetTexture(nullptr);
-        
+
         pipeline3d.PushMatrix();
         pipeline3d.Transform(
             Engine::Vector3(-2, 0, -8),
@@ -116,7 +116,7 @@ int main() {
 
         // Cube #2 Generation (with texture)
         tex_sampling_g.SetTargetTexture(&viewport_tex2d);
-        
+
         pipeline3d.PushMatrix();
         pipeline3d.Transform(
             Engine::Vector3(0.08 * i, 0, -5),             // Move dynamically horizontally
@@ -130,7 +130,7 @@ int main() {
         std::system("clear");
         context.Write();
         context.Clear(); // reset backend buffer
-        
+
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 
