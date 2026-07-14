@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(GraphicsEngine VERSION 1.0 LANGUAGES CXX)
+project(GraphicsEngine VERSION 1.2.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -33,6 +33,13 @@ target_include_directories(06_TexturePipeline3D PRIVATE include examples)
 
 add_executable(07_TexturePipeline2D examples/07_TexturePipeline2D.cpp src/Engine_Math.cpp)
 target_include_directories(07_TexturePipeline2D PRIVATE include examples)
+
+# Standalone visual render checks
+add_executable(MeshRenderTest render_test/test.cpp src/Engine_Math.cpp)
+target_include_directories(MeshRenderTest PRIVATE include examples)
+
+add_executable(AdditionalMeshesRenderTest render_test/additional_meshes.cpp src/Engine_Math.cpp)
+target_include_directories(AdditionalMeshesRenderTest PRIVATE include examples)
 
 enable_testing()
 

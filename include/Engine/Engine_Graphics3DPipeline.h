@@ -490,5 +490,12 @@ namespace Engine {
         void RenderGeometry(const std::vector<WorldVertex3D<ColorT>> &vertices, const std::vector<int> &triangles_indices) {
             input_g3d.RenderGeometry(vertices, triangles_indices);
         }
+        /**
+         * @brief Renders indexed triangle mesh data through the full 3D pipeline.
+         * @param mesh Mesh to render.
+         */
+        void RenderMesh(const Mesh3D<ColorT> &mesh) {
+            RenderGeometry(mesh.vertices, mesh.indices);
+        }
     };
 }

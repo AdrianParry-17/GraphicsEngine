@@ -89,6 +89,63 @@ TEST_CASE(Texture2D_NativeSamplingAndViewportMapping) {
     EXPECT_NEAR(29.5, value, 1e-9);
 }
 
+TEST_CASE(Texture2D_SourceAreaEdgeHandlingModes) {
+    Engine::FunctionTexture<double> src_texture([](int x, int y, double& result) {
+        if (x < 0 || x > 1 || y < 0 || y > 1)
+            return false;
+        result = y * 20.0 + x * 10.0;
+        return true;
+    });
+    Engine::Interpolator<double> interpolator;
+
+    Engine::NativeTexture2D<double> native_texture(
+        src_texture,
+        interpolator,
+        Engine::Rectangle(0, 0, 2, 2),
+        Engine::NativeTextureAdaptMethod::NearestNeighbor
+    );
+    Engine::ViewportTransformTexture2D<double> uv_texture(
+        native_texture,
+        Engine::RangeMapper(0.0, 1.0, 0.0, 2.0),
+        Engine::RangeMapper(0.0, 1.0, 0.0, 2.0)
+    );
+
+    double value = 0.0;
+    EXPECT_TRUE(uv_texture.GetColor(1.0, 1.0, value));
+    EXPECT_NEAR(30.0, value, 1e-9);
+
+    native_texture.SetEdgeHandlingMode(Engine::EdgeHandlingMode::Repeat);
+    EXPECT_TRUE(uv_texture.GetColor(1.0, 1.0, value));
+    EXPECT_NEAR(0.0, value, 1e-9);
+
+    native_texture.SetEdgeHandlingMode(Engine::EdgeHandlingMode::Reject);
+    EXPECT_TRUE(!uv_texture.GetColor(1.0, 1.0, value));
+}
+
+TEST_CASE(Texture2D_BilinearSourceAreaClampsNeighborReads) {
+    Engine::FunctionTexture<double> src_texture([](int x, int y, double& result) {
+        if (x < 0 || x > 1 || y < 0 || y > 1)
+            return false;
+        result = y * 20.0 + x * 10.0;
+        return true;
+    });
+    Engine::Interpolator<double> interpolator;
+
+    Engine::NativeTexture2D<double> bilinear_texture(
+        src_texture,
+        interpolator,
+        Engine::Rectangle(0, 0, 2, 2),
+        Engine::NativeTextureAdaptMethod::Bilinear
+    );
+
+    double value = 0.0;
+    EXPECT_TRUE(bilinear_texture.GetColor(1.75, 0.5, value));
+    EXPECT_NEAR(20.0, value, 1e-9);
+
+    bilinear_texture.SetEdgeHandlingMode(Engine::EdgeHandlingMode::Reject);
+    EXPECT_TRUE(!bilinear_texture.GetColor(1.75, 0.5, value));
+}
+
 TEST_CASE(Texture_TexturedInterpolatorsPreserveColorAndUV) {
     Engine::Interpolator<double> linear_color_interpolator;
     Engine::TexturedColorInterpolator<double> textured_interpolator(linear_color_interpolator);

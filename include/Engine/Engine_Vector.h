@@ -165,10 +165,14 @@ namespace Engine {
         template <size_t D2>
         bool operator==(const std::array<double, D2>& _data) const {
             if (!std::equal(data.begin(), data.begin() + std::min(D, D2), _data.begin())) return false;
-            return (D <= D2 || std::all_of(data.begin() + D2, data.end(), [](const double& v) { return v == 0.0; }));
+            if (D > D2)
+                return std::all_of(data.begin() + D2, data.end(), [](const double& v) { return v == 0.0; });
+            if (D2 > D)
+                return std::all_of(_data.begin() + D, _data.end(), [](const double& v) { return v == 0.0; });
+            return true;
         }
         template <size_t D2>
-        Vector<D> operator==(const Vector<D2>& _data) const { return operator==<D2>(_data.Data()); }
+        bool operator==(const Vector<D2>& _data) const { return operator==<D2>(_data.Data()); }
 
         bool operator!=(const std::array<double, D>& _data) const { return !operator==(_data); }
         bool operator!=(const Vector<D>& _data) const { return !operator==(_data.data); }
@@ -177,7 +181,7 @@ namespace Engine {
         template <size_t D2>
         bool operator!=(const std::array<double, D2>& _data) const { return !operator==<D2>(_data); }
         template <size_t D2>
-        Vector<D> operator!=(const Vector<D2>& _data) const { return operator!=<D2>(_data.Data()); }
+        bool operator!=(const Vector<D2>& _data) const { return operator!=<D2>(_data.Data()); }
 
         double& operator[](size_t d) { return data[d]; }
         const double& operator[](size_t d) const { return data[d]; }
@@ -284,7 +288,11 @@ namespace Engine {
         bool IsIdentical(const std::array<double, D2>& _data) const {
             if (!std::equal(data.begin(), data.begin() + std::min(D, D2), _data.begin(), [](const double& l, const double& r) { return NumericConstants::IsNearZero(l-r); }))
                 return false;
-            return (D <= D2 || std::all_of(data.begin() + D2, data.end(), [](const double& v) { return NumericConstants::IsNearZero(v); }));
+            if (D > D2)
+                return std::all_of(data.begin() + D2, data.end(), [](const double& v) { return NumericConstants::IsNearZero(v); });
+            if (D2 > D)
+                return std::all_of(_data.begin() + D, _data.end(), [](const double& v) { return NumericConstants::IsNearZero(v); });
+            return true;
         }
         /**
          * @brief Checks if the vector is identical to an vector of different dimensionality within a small tolerance.
@@ -293,7 +301,7 @@ namespace Engine {
          * @return True if identical, false otherwise.
          */
         template <size_t D2>
-        Vector<D> IsIdentical(const Vector<D2>& _data) const { return IsIdentical<D2>(_data.Data()); }
+        bool IsIdentical(const Vector<D2>& _data) const { return IsIdentical<D2>(_data.Data()); }
 
 
         /**

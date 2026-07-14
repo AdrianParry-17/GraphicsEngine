@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-07-14
+
+### Added
+- **Texture Edge Handling**: Added `EdgeHandlingMode` with `Clamp`, `Repeat`, and `Reject` policies, plus optional source-area edge handling for `NativeTexture2D`.
+- **Mesh Data and Primitives**: Added `Mesh<ColorT, D>`, dimension aliases, `RenderMesh` convenience methods, and `MeshPrimitive` generators for triangles, quads, circles, planes, cubes, pyramids, tetrahedra, octahedra, cylinders, cones, and spheres.
+- **Mesh Render Checks**: Added standalone single-frame render targets for the cube and additional built-in primitive meshes.
+
+### Fixed
+- **Texture UV Boundaries**: Exact UV upper-bound samples can now be clamped, repeated, or rejected explicitly when `NativeTexture2D` is configured with a source area.
+- **Vector Comparison**: Cross-dimension `Vector` comparison and identity checks now return `bool` and treat missing dimensions as zero symmetrically.
+
 ## [1.2.0] - 2026-03-14
 
 ### Added

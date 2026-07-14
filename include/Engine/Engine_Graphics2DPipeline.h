@@ -318,5 +318,12 @@ namespace Engine {
         void RenderGeometry(const std::vector<WorldVertex2D<ColorT>> &vertices, const std::vector<int> &triangles_indices) {
             input_g2d.RenderGeometry(vertices, triangles_indices);
         }
+        /**
+         * @brief Renders indexed triangle mesh data through the full 2D pipeline.
+         * @param mesh Mesh to render.
+         */
+        void RenderMesh(const Mesh2D<ColorT> &mesh) {
+            RenderGeometry(mesh.vertices, mesh.indices);
+        }
     };
 } // namespace Engine

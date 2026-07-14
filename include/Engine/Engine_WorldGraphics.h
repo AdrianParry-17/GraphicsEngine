@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Engine_Vector.h"
 #include "Engine_Matrix.h"
 #include "Engine_Interpolation.h"
 #include "Engine_Range.h"
@@ -10,6 +11,8 @@
 #include <functional>
 
 namespace Engine {
+    template <typename ColorT, size_t D> struct Mesh;
+
     /**
      * @brief A vertex in D-dimensional world space, holding a position and a color.
      * @tparam ColorT The color type associated with the vertex.
@@ -17,37 +20,21 @@ namespace Engine {
      */
     template <typename ColorT, size_t D>
     struct WorldVertex {
-        /**
-         * @brief The dimensionality of the vertex position.
-         */
+        /** @brief The dimensionality of the vertex position. */
         static const size_t Dimension = D;
 
-        /**
-         * @brief The position of the vertex in world space.
-         */
+        /** @brief The position of the vertex in world space. */
         Vector<Dimension> position;
-        /**
-         * @brief The color associated with the vertex.
-         */
+        /** @brief The color associated with the vertex. */
         ColorT color;
 
         /** @brief Default constructor. */
         WorldVertex() = default;
-        /**
-         * @brief Constructor with position only.
-         * @param _position The world-space position.
-         */
+        /** @brief Constructs a vertex with a world-space position. */
         WorldVertex(const Vector<Dimension>& _position) : position(_position) {}
-        /**
-         * @brief Constructor with color only.
-         * @param _color The vertex color.
-         */
+        /** @brief Constructs a vertex with a payload. */
         WorldVertex(const ColorT& _color) : color(_color) {}
-        /**
-         * @brief Constructor with position and color.
-         * @param _position The world-space position.
-         * @param _color The vertex color.
-         */
+        /** @brief Constructs a vertex with a position and payload. */
         WorldVertex(const Vector<Dimension>& _position, const ColorT& _color) : position(_position), color(_color) {}
     };
 
@@ -79,6 +66,11 @@ namespace Engine {
          * @param triangles_indices The indices into the vertex list, in groups of three per triangle.
          */
         virtual void RenderGeometry(const std::vector<WorldVertex<ColorT, D>>& vertices, const std::vector<int>& triangles_indices);
+        /**
+         * @brief Renders indexed triangle mesh data.
+         * @param mesh Mesh to render.
+         */
+        void RenderMesh(const Mesh<ColorT, D>& mesh);
     };
 
     /**
@@ -379,8 +371,8 @@ namespace Engine {
         std::vector<WorldPlane<D>> planes;
         IInterpolator<ColorT>& color_interpolator;
 
-        bool __isInside(const Vector<D>& p, const WorldPlane<D>& plane) const;
-        double __computePlaneIntersection(const WorldPlane<D>& plane, const Vector<D>& a, const Vector<D>& b) const;
+        bool isInside(const Vector<D>& p, const WorldPlane<D>& plane) const;
+        double computePlaneIntersection(const WorldPlane<D>& plane, const Vector<D>& a, const Vector<D>& b) const;
     public:
         /**
          * @brief Constructor.
@@ -626,11 +618,11 @@ inline void Engine::MatrixWorldGraphics<ColorT, D>::RenderGeometry(const std::ve
 // -- PlaneClipWorldGraphics --
 
 template <typename ColorT, size_t D>
-inline bool Engine::PlaneClipWorldGraphics<ColorT, D>::__isInside(const Vector<D>& p, const WorldPlane<D>& plane) const {
+inline bool Engine::PlaneClipWorldGraphics<ColorT, D>::isInside(const Vector<D>& p, const WorldPlane<D>& plane) const {
     return NumericConstants::IsNearZeroOrPositive(plane.EvaluatePoint(p));
 }
 template <typename ColorT, size_t D>
-inline double Engine::PlaneClipWorldGraphics<ColorT, D>::__computePlaneIntersection(const WorldPlane<D>& plane, const Vector<D>& a, const Vector<D>& b) const {
+inline double Engine::PlaneClipWorldGraphics<ColorT, D>::computePlaneIntersection(const WorldPlane<D>& plane, const Vector<D>& a, const Vector<D>& b) const {
     double a_val = plane.EvaluatePoint(a), b_val = plane.EvaluatePoint(b);
     
     double factor = a_val - b_val;
@@ -659,8 +651,8 @@ inline void Engine::PlaneClipWorldGraphics<ColorT, D>::ComputeClippedTriangleGeo
             WorldVertex<ColorT, D>& prev = polygon[(polygon.size() - 1 + i) % polygon.size()];
             WorldVertex<ColorT, D>& curr = polygon[i];
 
-            bool prev_inside = __isInside(prev.position, plane);
-            bool curr_inside = __isInside(curr.position, plane);
+            bool prev_inside = isInside(prev.position, plane);
+            bool curr_inside = isInside(curr.position, plane);
 
             // Exactly one of the vertex not inside, append the intersection point
             if (curr_inside != prev_inside) {
@@ -668,7 +660,7 @@ inline void Engine::PlaneClipWorldGraphics<ColorT, D>::ComputeClippedTriangleGeo
                 tmp.push_back(prev); // prev here is just tmp, avoiding 'no default constructor for ColorT'.
                 WorldVertex<ColorT, D>& intersection = tmp.back();
 
-                double t = __computePlaneIntersection(plane, prev.position, curr.position);
+                double t = computePlaneIntersection(plane, prev.position, curr.position);
                 t = std::max(0.0, std::min(1.0, t)); // Clamp t to [0, 1]
 
                 Vector<D>::Lerp(prev.position, curr.position, t, intersection.position);
